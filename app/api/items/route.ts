@@ -1,8 +1,9 @@
 import { authOptions } from '@/app/lib/backend/authConfig';
 import { getServerSession } from 'next-auth/next';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/app/lib/mock/mockDb';
-import { v4 as uuidv4 } from 'uuid';
+import { Item } from '@/app/models/Item';
+import { uploadFileToS3 } from '@/app/lib/s3';
+import connectDB from '@/app/lib/mongodb';
 
 export async function GET(request: Request) {
   try {
@@ -16,14 +17,19 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let items = db.items.filter(item => item.owner === session.user.id);
-    
+    await connectDB();
+
+    let items;
     if (parentId) {
-      items = items.filter(item => item.parentId === parentId);
+      items = await Item.findByParent(parentId);
     } else {
       // Return root folder if no parentId specified
-      items = items.filter(item => item._id === session.user.rootFolder);
+      const rootFolder = await Item.findById(session.user.rootFolder);
+      items = rootFolder ? [rootFolder] : [];
     }
+
+    // Filter by owner
+    items = items.filter(item => item.owner === session.user.id);
 
     const totalItems = items.length;
     const start = (page - 1) * limit;
@@ -55,6 +61,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    await connectDB();
+
     const contentType = request.headers.get('content-type');
 
     if (contentType?.includes('multipart/form-data')) {
@@ -68,18 +76,27 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Name is required' }, { status: 400 });
       }
 
-      const item = {
-        _id: uuidv4(),
+      let fileUrl = url || '/file.svg';
+      let fileSize = 0;
+      let mimeType = null;
+
+      if (file) {
+        const uploadResult = await uploadFileToS3(file, name, session.user.id);
+        fileUrl = uploadResult.url;
+        fileSize = uploadResult.size;
+        mimeType = file.type;
+      }
+
+      const item = await Item.createItem({
         name,
-        type: 'file' as const,
+        type: 'file',
         parentId: parentId || session.user.rootFolder,
         owner: session.user.id,
-        size: file?.size || 0,
-        mimeType: file?.type || null,
-        url: url || '/file.svg'
-      };
+        size: fileSize,
+        mimeType: mimeType,
+        url: fileUrl
+      });
 
-      db.items.push(item);
       return NextResponse.json(item, { status: 201 });
     } else {
       const body = await request.json();
@@ -93,19 +110,17 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid type. Must be "file" or "folder".' }, { status: 400 });
       }
 
-      const item = {
-        _id: uuidv4(),
+      const item = await Item.createItem({
         name,
         type: type as 'file' | 'folder',
         parentId: parentId || session.user.rootFolder,
         owner: session.user.id
-      };
+      });
 
-      db.items.push(item);
       return NextResponse.json(item, { status: 201 });
     }
   } catch (error: any) {
     console.error('API Error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 } 

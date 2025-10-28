@@ -1,0 +1,27 @@
+# Firebase Configuration Template
+# Copy this content to .env.local in the demo folder and replace placeholder values
+
+# Firebase Admin SDK Configuration (Server-side)
+# Get these values from your Firebase service account JSON file
+FIREBASE_PROJECT_ID=your-firebase-project-id-here
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nYour-private-key-content-here\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@your-project-id.iam.gserviceaccount.com
+FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+
+# Firebase Client Configuration (Frontend)
+# Get these values from your Firebase web app configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key-here
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-firebase-project-id-here
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id-here
+
+# NextAuth Configuration
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=your-random-secret-key-here-generate-with-openssl-rand-base64-32
+
+# Application Configuration
+NEXT_PUBLIC_HOST_NAME=http://localhost:3000
+NODE_ENV=development
+

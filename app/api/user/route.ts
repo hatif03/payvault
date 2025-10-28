@@ -1,7 +1,8 @@
 import { authOptions } from '@/app/lib/backend/authConfig';
 import { getServerSession } from 'next-auth/next';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/app/lib/mock/mockDb';
+import { User } from '@/app/models/User';
+import connectDB from '@/app/lib/mongodb';
 
 export async function GET() {
   try {
@@ -10,18 +11,21 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = db.users.find(u => u._id === session.user.id);
+    await connectDB();
+    const user = await User.findById(session.user.id);
+    
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     return NextResponse.json({
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
+        wallet: user.wallet,
         rootFolder: user.rootFolder,
-        createdAt: new Date().toISOString()
+        createdAt: user.createdAt
       }
     });
   } catch (error: any) {
@@ -42,7 +46,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required' }, { status: 400 });
     }
 
-    const user = db.users.find(u => u.email === email);
+    await connectDB();
+    const user = await User.findByEmail(email);
+    
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -51,7 +57,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot create affiliate for yourself' }, { status: 400 });
     }
 
-    return NextResponse.json({ user: { _id: user._id, name: user.name, email: user.email } });
+    return NextResponse.json({ 
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email 
+      } 
+    });
   } catch (error: any) {
     console.error('POST /api/user error:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

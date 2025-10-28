@@ -1,16 +1,13 @@
 import { authOptions } from '@/app/lib/backend/authConfig';
 import connectDB from '@/app/lib/mongodb';
-import mongoose, { PopulateOptions, SortOrder } from 'mongoose';
 import { getServerSession } from 'next-auth/next';
 import { NextRequest, NextResponse } from 'next/server';
-
-type PopulateArg = string | PopulateOptions | { path: string } | (string | PopulateOptions | { path: string })[];
+import { withFirestoreTransaction } from '../firestoreTransaction';
 
 export interface PaginationParams {
   page?: number;
   limit?: number;
-  populate?: PopulateArg;
-  sort?: { [key: string]: SortOrder };
+  sort?: { [key: string]: 'asc' | 'desc' };
 }
 
 export interface PaginationResult<T> {
@@ -25,45 +22,58 @@ export interface PaginationResult<T> {
 
 export async function handlePaginatedRequest<T>(
   query: any,
-  model: mongoose.Model<T>,
+  service: any, // FirestoreService instance
   params: PaginationParams = {}
 ): Promise<PaginationResult<T>> {
   const page = parseInt(String(params.page || '1'));
   const limit = parseInt(String(params.limit || '20'));
   const skip = (page - 1) * limit;
 
-  await connectDB()
+  await connectDB();
 
-  let findQuery = model.find(query);
-  
-  if (params.populate) {
-    if (Array.isArray(params.populate)) {
-      params.populate.forEach(populateOption => {
-        findQuery = findQuery.populate(populateOption as any);
+  try {
+    // Get all items matching the query
+    const allItems = await service.findMany(query);
+    
+    // Apply sorting if provided
+    let sortedItems = allItems;
+    if (params.sort) {
+      sortedItems = allItems.sort((a: any, b: any) => {
+        for (const [field, direction] of Object.entries(params.sort!)) {
+          const aVal = a[field];
+          const bVal = b[field];
+          
+          if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+          if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+        }
+        return 0;
       });
-    } else {
-      findQuery = findQuery.populate(params.populate as any);
     }
+
+    // Apply pagination
+    const paginatedItems = sortedItems.slice(skip, skip + limit);
+
+    return {
+      items: paginatedItems,
+      pagination: {
+        current: page,
+        total: Math.ceil(allItems.length / limit),
+        count: paginatedItems.length,
+        totalItems: allItems.length
+      }
+    };
+  } catch (error) {
+    console.error('Error in paginated request:', error);
+    return {
+      items: [],
+      pagination: {
+        current: page,
+        total: 0,
+        count: 0,
+        totalItems: 0
+      }
+    };
   }
-
-  if (params.sort) {
-    findQuery = findQuery.sort(params.sort);
-  }
-
-  const [items, total] = await Promise.all([
-    findQuery.skip(skip).limit(limit),
-    model.countDocuments(query)
-  ]);
-
-  return {
-    items,
-    pagination: {
-      current: page,
-      total: Math.ceil(total / limit),
-      count: items.length,
-      totalItems: total
-    }
-  };
 }
 
 export async function withErrorHandler(
@@ -106,48 +116,9 @@ export async function withAuthCheck(request: NextRequest): Promise<string> {
 }
 
 export async function withTransaction<T>(
-  handler: (session: mongoose.ClientSession) => Promise<T>
+  handler: (transaction: any) => Promise<T>
 ): Promise<T> {
-  await connectDB();
-  
-  // Retry logic for transaction conflicts
-  const maxRetries = 3;
-  let lastError: any;
-  
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
-    const session = await mongoose.startSession();
-    
-    try {
-      return await session.withTransaction(async () => {
-        return await handler(session);
-      }, {
-        readConcern: { level: 'majority' },
-        writeConcern: { w: 'majority' },
-        maxCommitTimeMS: 1000
-      });
-    } catch (error: any) {
-      lastError = error;
-      
-      // Check if it's a transaction conflict that we can retry
-      const isRetryableError = error.code === 251 || // NoSuchTransaction
-                              error.code === 112 || // WriteConflict
-                              error.code === 244 || // TransactionTooOld
-                              error.errorLabels?.includes('TransientTransactionError');
-      
-      if (isRetryableError && attempt < maxRetries) {
-        console.log(`Transaction attempt ${attempt} failed, retrying...`, error.message);
-        // Wait a bit before retrying with exponential backoff
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 100));
-        continue;
-      }
-      
-      throw error;
-    } finally {
-      await session.endSession();
-    }
-  }
-  
-  throw lastError;
+  return withFirestoreTransaction(handler);
 }
 
 export interface MonetizedContent {
@@ -172,10 +143,10 @@ export function createAccessResponse(
   userId?: string
 ) {
   // Check if user is the owner
-  const isOwner = userId && content.owner && content.owner._id.toString() === userId;
+  const isOwner = userId && content.owner && content.owner === userId;
 
   // Owner or paid users can access
-  if (isOwner || !isMonetized || (userId && content.paidUsers.some((paidUserId: any) => paidUserId.toString() === userId))) {
+  if (isOwner || !isMonetized || (userId && content.paidUsers.some((paidUserId: any) => paidUserId === userId))) {
     return {
       link: content,
       canAccess: true,
@@ -186,7 +157,7 @@ export function createAccessResponse(
   }
 
   const limitedInfo = {
-    _id: content._id,
+    id: content.id,
     title: content.title,
     description: content.description,
     type: content?.type,

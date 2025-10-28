@@ -1,15 +1,15 @@
 import React from 'react'
-import loader1 from '@/assets/loader_1.svg'
-import loader2 from '@/assets/loader_2.svg'
-import loader3 from '@/assets/loader_3.svg'
+import neopopIcon1 from '@/assets/neopop-icon-1.svg'
+import neopopIcon2 from '@/assets/neopop-icon-2.svg'
+import neopopIcon3 from '@/assets/neopop-icon-3.svg'
 import Image from 'next/image'
 
 const Loader = () => {
   return (
     <div className='w-fit h-fit flex flex-row justify-center items-center gap-5'>
-        <Image src={loader1} alt='loader' className='w-20 h-20 animate-spin' />
-        <Image src={loader2} alt='loader' className='w-20 h-20 animate-spin' />
-        <Image src={loader3} alt='loader' className='w-20 h-20 animate-spin' />
+        <Image src={neopopIcon1} alt='loader' className='w-20 h-20 animate-spin neopop-float' />
+        <Image src={neopopIcon2} alt='loader' className='w-20 h-20 animate-spin neopop-pulse' />
+        <Image src={neopopIcon3} alt='loader' className='w-20 h-20 animate-spin neopop-float' />
     </div>
   )
 }

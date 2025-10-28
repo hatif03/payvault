@@ -46,7 +46,7 @@ export default function SignInForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-900 py-12 px-4 sm:px-6 lg:px-8 relative">
-      <div className="max-w-md w-full space-y-8 bg-slate-800 p-8 border-2 border-slate-600 brutal-shadow-left rounded-lg relative z-10">
+      <div className="max-w-lg w-full space-y-8 bg-slate-800 p-8 border-2 border-slate-600 brutal-shadow-left rounded-lg relative z-10">
         <div>
           <h2 className="heading-text-2 text-5xl font-anton text-center mb-3">
             SIGN IN

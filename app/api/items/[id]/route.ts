@@ -1,7 +1,9 @@
 import { authOptions } from '@/app/lib/backend/authConfig';
 import { getServerSession } from 'next-auth/next';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/app/lib/mock/mockDb';
+import { Item } from '@/app/models/Item';
+import { uploadFileToS3 } from '@/app/lib/s3';
+import connectDB from '@/app/lib/mongodb';
 
 export async function GET(request: NextRequest) {
   try {
@@ -11,9 +13,11 @@ export async function GET(request: NextRequest) {
     }
     
     const id = request.nextUrl.pathname.split("/")[3];
-    const item = db.items.find(i => i._id === id && i.owner === session.user.id);
+    await connectDB();
     
-    if (!item) {
+    const item = await Item.findById(id);
+    
+    if (!item || item.owner !== session.user.id) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
@@ -32,6 +36,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const id = request.nextUrl.pathname.split("/")[3];
+    await connectDB();
+
     const contentType = request.headers.get('content-type');
 
     let name: string | undefined;
@@ -50,16 +56,19 @@ export async function PUT(request: NextRequest) {
       parentId = body.parentId;
     }
 
-    const itemIndex = db.items.findIndex(i => i._id === id && i.owner === session.user.id);
+    const item = await Item.findById(id);
     
-    if (itemIndex === -1) {
+    if (!item || item.owner !== session.user.id) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    if (name) db.items[itemIndex].name = name;
-    if (parentId !== undefined) db.items[itemIndex].parentId = parentId;
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (parentId !== undefined) updateData.parentId = parentId;
 
-    return NextResponse.json(db.items[itemIndex]);
+    const updatedItem = await Item.update(id, updateData);
+
+    return NextResponse.json(updatedItem);
   } catch (error: any) {
     console.error('PUT /api/items/[id] error:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
@@ -74,18 +83,19 @@ export async function DELETE(request: NextRequest) {
     }
 
     const id = request.nextUrl.pathname.split("/")[3];
-    const itemIndex = db.items.findIndex(i => i._id === id && i.owner === session.user.id);
+    await connectDB();
     
-    if (itemIndex === -1) {
+    const item = await Item.findById(id);
+    
+    if (!item || item.owner !== session.user.id) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    // Simple deletion - remove the item
-    db.items.splice(itemIndex, 1);
+    const success = await Item.deleteItem(id);
 
     return NextResponse.json({ 
       message: 'Item deleted successfully',
-      deletedCount: 1 
+      deletedCount: success ? 1 : 0
     });
   } catch (error: any) {
     console.error('DELETE /api/items/[id] error:', error);

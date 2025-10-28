@@ -1,8 +1,10 @@
 import { AuthOptions, DefaultSession, User as NextAuthUser } from 'next-auth';
 import { JWT } from 'next-auth/jwt';
 import CredentialsProvider from 'next-auth/providers/credentials';
+import { User } from '@/app/models/User';
+import { Item } from '@/app/models/Item';
+import connectDB from '@/app/lib/mongodb';
 import { mockHelpers } from '@/app/lib/mock/mockDb';
-
 
 interface CustomUser extends NextAuthUser {
   id: string;
@@ -31,6 +33,7 @@ export const authOptions: AuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
         name: { label: "Name", type: "text" },
+        wallet: { label: "Wallet", type: "text" },
         isRegistration: { label: "Is Registration", type: "hidden" }
       },
       async authorize(credentials): Promise<CustomUser | null> {
@@ -38,24 +41,111 @@ export const authOptions: AuthOptions = {
           throw new Error('Please enter an email and password');
         }
 
-        // Fixed credential login
-        if (credentials.email === 'demo@demo.com' && credentials.password === 'demo123') {
-          const user = mockHelpers.findUserByEmail('demo@demo.com');
-          if (!user) throw new Error('Demo user not seeded');
-          return {
-            id: user._id,
-            email: user.email,
-            name: user.name,
-            wallet: user.wallet,
-            rootFolder: user.rootFolder,
-          };
-        }
+        try {
+          await connectDB();
 
-        throw new Error('Invalid credentials');
+          // Check if this is a registration attempt
+          if (credentials.isRegistration === 'true') {
+            if (!credentials.name) {
+              throw new Error('Name is required for registration');
+            }
+
+            // Check if user already exists
+            const existingUser = await User.findByEmail(credentials.email);
+            if (existingUser) {
+              throw new Error('An account with this email already exists');
+            }
+
+            // Generate a demo wallet address for new users
+            const wallet = credentials.wallet || `0x${Math.random().toString(16).substr(2, 40)}`;
+
+            // Create root folder for the user
+            const rootFolder = await Item.createItem({
+              name: credentials.email,
+              type: 'folder',
+              owner: 'temp', // Will be updated after user creation
+            });
+
+            // Create the user
+            const newUser = await User.createUser({
+              email: credentials.email,
+              password: credentials.password,
+              name: credentials.name,
+              wallet: wallet,
+              rootFolder: rootFolder.id,
+            });
+
+            // Update the root folder with the correct owner
+            await Item.update(rootFolder.id, { owner: newUser.id });
+
+            return {
+              id: newUser.id,
+              email: newUser.email,
+              name: newUser.name,
+              wallet: newUser.wallet,
+              rootFolder: newUser.rootFolder,
+            };
+          } else {
+            // Login attempt
+            console.log('Attempting login for:', credentials.email);
+            const user = await User.findByEmail(credentials.email);
+            console.log('User found:', user ? 'Yes' : 'No');
+            
+            if (!user) {
+              // Fallback to demo user if Firebase is not available
+              if (credentials.email === 'demo@demo.com' && credentials.password === 'demo123') {
+                console.log('Using demo user fallback');
+                return {
+                  id: 'demo-user-id',
+                  email: 'demo@demo.com',
+                  name: 'Demo User',
+                  wallet: '0x1111111111111111111111111111111111111111',
+                  rootFolder: 'demo-root-folder',
+                };
+              }
+              throw new Error('Invalid email or password');
+            }
+
+            // Verify password
+            console.log('Verifying password for user:', user.email);
+            const isValidPassword = await User.comparePassword(user, credentials.password);
+            console.log('Password valid:', isValidPassword);
+            
+            if (!isValidPassword) {
+              throw new Error('Invalid email or password');
+            }
+
+            console.log('Login successful for:', user.email);
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              wallet: user.wallet,
+              rootFolder: user.rootFolder,
+            };
+          }
+        } catch (error: any) {
+          console.error('Auth error:', error);
+          
+          // Fallback to mock system if Firebase is not available
+          if (credentials.email === 'demo@demo.com' && credentials.password === 'demo123') {
+            const user = mockHelpers.findUserByEmail('demo@demo.com');
+            if (!user) throw new Error('Demo user not seeded');
+            return {
+              id: user._id,
+              email: user.email,
+              name: user.name,
+              wallet: user.wallet,
+              rootFolder: user.rootFolder,
+            };
+          }
+
+          throw new Error(error.message || 'Authentication failed');
+        }
       }
     })
   ],
-  secret: 'demo-secret',
+  secret: process.env.NEXTAUTH_SECRET || 'demo-secret',
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60,

@@ -1,58 +1,115 @@
-import mongoose from 'mongoose';
+import { FirestoreService, FirestoreDocument } from '../lib/firestoreService';
 
-const listingSchema = new mongoose.Schema({
-  item: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Item',
-    required: true,
-    unique: true
-  },
-  seller: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  title: {
-    type: String,
-    required: [true, 'Title is required'],
-    trim: true,
-    maxlength: [100, 'Title cannot exceed 100 characters']
-  },
-  description: {
-    type: String,
-    required: [true, 'Description is required'],
-    trim: true,
-    maxlength: [1000, 'Description cannot exceed 1000 characters']
-  },
-  price: {
-    type: Number,
-    required: [true, 'Price is required'],
-    min: [0.01, 'Price must be greater than 0']
-  },
-  status: {
-    type: String,
-    enum: ['active', 'inactive', 'suspended'],
-    default: 'active'
-  },
-  tags: {
-    type: [String],
-    default: []
-  },
-  views: {
-    type: Number,
-    default: 0
-  },
-  affiliateEnabled: {
-    type: Boolean,
-    default: false
+export interface Listing extends FirestoreDocument {
+  item: string; // Document reference to Item
+  seller: string; // Document reference to User
+  title: string;
+  description: string;
+  price: number;
+  status: 'active' | 'inactive' | 'suspended';
+  tags: string[];
+  views: number;
+  affiliateEnabled: boolean;
+}
+
+export interface CreateListingData {
+  item: string;
+  seller: string;
+  title: string;
+  description: string;
+  price: number;
+  status?: 'active' | 'inactive' | 'suspended';
+  tags?: string[];
+  views?: number;
+  affiliateEnabled?: boolean;
+}
+
+export interface UpdateListingData {
+  item?: string;
+  seller?: string;
+  title?: string;
+  description?: string;
+  price?: number;
+  status?: 'active' | 'inactive' | 'suspended';
+  tags?: string[];
+  views?: number;
+  affiliateEnabled?: boolean;
+}
+
+class ListingService extends FirestoreService<Listing> {
+  constructor() {
+    super('listings');
   }
-}, {
-  timestamps: true,
-});
 
-listingSchema.index({ status: 1, createdAt: -1 });
-listingSchema.index({ seller: 1, status: 1 });
-listingSchema.index({ price: 1 });
-listingSchema.index({ affiliateEnabled: 1, status: 1 });
+  async createListing(data: CreateListingData): Promise<Listing> {
+    const listingData = {
+      ...data,
+      status: data.status || 'active',
+      tags: data.tags || [],
+      views: data.views || 0,
+      affiliateEnabled: data.affiliateEnabled || false,
+    };
 
-export const Listing = mongoose.models.Listing || mongoose.model('Listing', listingSchema); 
+    return this.create(listingData);
+  }
+
+  async findBySeller(sellerId: string): Promise<Listing[]> {
+    return this.findMany({ seller: sellerId } as Partial<Listing>);
+  }
+
+  async findByItem(itemId: string): Promise<Listing | null> {
+    return this.findOne({ item: itemId } as Partial<Listing>);
+  }
+
+  async findByStatus(status: 'active' | 'inactive' | 'suspended'): Promise<Listing[]> {
+    return this.findMany({ status } as Partial<Listing>);
+  }
+
+  async findActiveListings(): Promise<Listing[]> {
+    return this.findByStatus('active');
+  }
+
+  async findBySellerAndStatus(sellerId: string, status: 'active' | 'inactive' | 'suspended'): Promise<Listing[]> {
+    return this.findMany({ seller: sellerId, status } as Partial<Listing>);
+  }
+
+  async findByAffiliateEnabled(affiliateEnabled: boolean): Promise<Listing[]> {
+    return this.findMany({ affiliateEnabled } as Partial<Listing>);
+  }
+
+  async findByPriceRange(minPrice: number, maxPrice: number): Promise<Listing[]> {
+    // Note: Firestore doesn't support range queries on multiple fields easily
+    // This would need to be implemented differently in production
+    const allListings = await this.findActiveListings();
+    return allListings.filter(listing => 
+      listing.price >= minPrice && listing.price <= maxPrice
+    );
+  }
+
+  async findByTags(tags: string[]): Promise<Listing[]> {
+    // Note: Firestore doesn't support array-contains-any easily
+    // This would need to be implemented differently in production
+    const allListings = await this.findActiveListings();
+    return allListings.filter(listing => 
+      tags.some(tag => listing.tags.includes(tag))
+    );
+  }
+
+  async incrementViews(listingId: string): Promise<Listing | null> {
+    const listing = await this.findById(listingId);
+    if (!listing) return null;
+
+    return this.update(listingId, { views: listing.views + 1 } as UpdateListingData);
+  }
+
+  async updateStatus(listingId: string, status: 'active' | 'inactive' | 'suspended'): Promise<Listing | null> {
+    return this.update(listingId, { status } as UpdateListingData);
+  }
+
+  async updateAffiliateSettings(listingId: string, affiliateEnabled: boolean): Promise<Listing | null> {
+    return this.update(listingId, { affiliateEnabled } as UpdateListingData);
+  }
+}
+
+// Export singleton instance
+export const Listing = new ListingService(); 

@@ -1,101 +1,155 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import { FirestoreService, FirestoreDocument } from '../lib/firestoreService';
 
-export interface ISharedLink extends Document {
-  _id: string;
-  item: mongoose.Types.ObjectId;
-  owner: mongoose.Types.ObjectId;
+export interface SharedLink extends FirestoreDocument {
+  item: string; // Document reference to Item
+  owner: string; // Document reference to User
   linkId: string;
   type: 'public' | 'monetized';
-  price?: number;
+  price?: number; // Required for monetized links
   title: string;
   description?: string;
   isActive: boolean;
   expiresAt?: Date;
   accessCount: number;
-  paidUsers: mongoose.Types.ObjectId[];
+  paidUsers: string[]; // Document references to Users
   affiliateEnabled: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
-const sharedLinkSchema = new Schema<ISharedLink>({
-  item: {
-    type: Schema.Types.ObjectId,
-    ref: 'Item',
-    required: true
-  },
-  owner: {
-    type: Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  linkId: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true
-  },
-  type: {
-    type: String,
-    enum: ['public', 'monetized'],
-    required: true
-  },
-  price: {
-    type: Number,
-    min: 0,
-    required: function(this: ISharedLink) {
-      return this?.type === 'monetized';
-    }
-  },
-  title: {
-    type: String,
-    required: true,
-    trim: true,
-    maxlength: 100
-  },
-  description: {
-    type: String,
-    trim: true,
-    maxlength: 500
-  },
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  expiresAt: {
-    type: Date,
-    default: null
-  },
-  accessCount: {
-    type: Number,
-    default: 0
-  },
-  paidUsers: [{
-    type: Schema.Types.ObjectId,
-    ref: 'User'
-  }],
-  affiliateEnabled: {
-    type: Boolean,
-    default: false
+export interface CreateSharedLinkData {
+  item: string;
+  owner: string;
+  linkId: string;
+  type: 'public' | 'monetized';
+  price?: number;
+  title: string;
+  description?: string;
+  isActive?: boolean;
+  expiresAt?: Date;
+  accessCount?: number;
+  paidUsers?: string[];
+  affiliateEnabled?: boolean;
+}
+
+export interface UpdateSharedLinkData {
+  item?: string;
+  owner?: string;
+  linkId?: string;
+  type?: 'public' | 'monetized';
+  price?: number;
+  title?: string;
+  description?: string;
+  isActive?: boolean;
+  expiresAt?: Date;
+  accessCount?: number;
+  paidUsers?: string[];
+  affiliateEnabled?: boolean;
+}
+
+class SharedLinkService extends FirestoreService<SharedLink> {
+  constructor() {
+    super('sharedlinks');
   }
-}, {
-  timestamps: true,
-  collection: 'sharedlinks'
-});
 
-sharedLinkSchema.index({ owner: 1, createdAt: -1 });
-sharedLinkSchema.index({ type: 1, isActive: 1 });
-sharedLinkSchema.index({ expiresAt: 1 }, { 
-  expireAfterSeconds: 0,
-  partialFilterExpression: { expiresAt: { $ne: null } }
-});
+  async createSharedLink(data: CreateSharedLinkData): Promise<SharedLink> {
+    // Validate price requirement for monetized links
+    if (data.type === 'monetized' && (!data.price || data.price <= 0)) {
+      throw new Error('Price is required for monetized shared links');
+    }
 
-sharedLinkSchema.pre(['find', 'findOne'], function() {
-  this.populate('item', 'name type size mimeType url')
-      .populate('owner', 'name email wallet');
-});
+    const sharedLinkData = {
+      ...data,
+      isActive: data.isActive !== undefined ? data.isActive : true,
+      accessCount: data.accessCount || 0,
+      paidUsers: data.paidUsers || [],
+      affiliateEnabled: data.affiliateEnabled || false,
+    };
 
-const SharedLinkModel = mongoose.models.SharedLink || mongoose.model<ISharedLink>('SharedLink', sharedLinkSchema);
+    return this.create(sharedLinkData);
+  }
 
-export { SharedLinkModel as SharedLink };
-export default SharedLinkModel; 
+  async findByLinkId(linkId: string): Promise<SharedLink | null> {
+    return this.findOne({ linkId } as Partial<SharedLink>);
+  }
+
+  async findByOwner(ownerId: string): Promise<SharedLink[]> {
+    return this.findMany({ owner: ownerId } as Partial<SharedLink>);
+  }
+
+  async findByItem(itemId: string): Promise<SharedLink[]> {
+    return this.findMany({ item: itemId } as Partial<SharedLink>);
+  }
+
+  async findByType(type: 'public' | 'monetized'): Promise<SharedLink[]> {
+    return this.findMany({ type } as Partial<SharedLink>);
+  }
+
+  async findActiveLinks(): Promise<SharedLink[]> {
+    return this.findMany({ isActive: true } as Partial<SharedLink>);
+  }
+
+  async findByOwnerAndType(ownerId: string, type: 'public' | 'monetized'): Promise<SharedLink[]> {
+    return this.findMany({ owner: ownerId, type } as Partial<SharedLink>);
+  }
+
+  async incrementAccessCount(linkId: string): Promise<SharedLink | null> {
+    const sharedLink = await this.findByLinkId(linkId);
+    if (!sharedLink) return null;
+
+    return this.update(sharedLink.id, { 
+      accessCount: sharedLink.accessCount + 1 
+    } as UpdateSharedLinkData);
+  }
+
+  async addPaidUser(linkId: string, userId: string): Promise<SharedLink | null> {
+    const sharedLink = await this.findByLinkId(linkId);
+    if (!sharedLink) return null;
+
+    const paidUsers = [...sharedLink.paidUsers];
+    if (!paidUsers.includes(userId)) {
+      paidUsers.push(userId);
+    }
+
+    return this.update(sharedLink.id, { paidUsers } as UpdateSharedLinkData);
+  }
+
+  async isUserPaid(linkId: string, userId: string): Promise<boolean> {
+    const sharedLink = await this.findByLinkId(linkId);
+    if (!sharedLink) return false;
+
+    return sharedLink.paidUsers.includes(userId);
+  }
+
+  async updateStatus(linkId: string, isActive: boolean): Promise<SharedLink | null> {
+    const sharedLink = await this.findByLinkId(linkId);
+    if (!sharedLink) return null;
+
+    return this.update(sharedLink.id, { isActive } as UpdateSharedLinkData);
+  }
+
+  async updateAffiliateSettings(linkId: string, affiliateEnabled: boolean): Promise<SharedLink | null> {
+    const sharedLink = await this.findByLinkId(linkId);
+    if (!sharedLink) return null;
+
+    return this.update(sharedLink.id, { affiliateEnabled } as UpdateSharedLinkData);
+  }
+
+  async getExpiredLinks(): Promise<SharedLink[]> {
+    const now = new Date();
+    const allLinks = await this.findMany({} as Partial<SharedLink>);
+    
+    return allLinks.filter(link => 
+      link.expiresAt && link.expiresAt < now
+    );
+  }
+
+  async getPublicLinks(): Promise<SharedLink[]> {
+    return this.findMany({ type: 'public', isActive: true } as Partial<SharedLink>);
+  }
+
+  async getMonetizedLinks(): Promise<SharedLink[]> {
+    return this.findMany({ type: 'monetized', isActive: true } as Partial<SharedLink>);
+  }
+}
+
+// Export singleton instance
+export const SharedLink = new SharedLinkService(); 
