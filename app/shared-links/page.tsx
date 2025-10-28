@@ -74,15 +74,15 @@ export default function SharedLinksPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-white relative">
+      <div className="min-h-screen bg-slate-900 relative">
         <main className="max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
-            <h1 className="text-6xl heading-text-2 font-anton mb-8">SHARED LINKS</h1>
+            <h1 className="text-6xl heading-text-2 font-anton mb-8 text-white">SHARED LINKS</h1>
             <div className='flex justify-center items-center mt-10'><Loader /></div>
           </div>
         </main>
-        <FooterPattern design={1} className=' w-[80vw] bottom-0 right-0 ' />
-        <FooterPattern design={1} className=' w-[80vw] top-0 left-0 -scale-100 ' />
+        <FooterPattern design={1} className=' w-[80vw] bottom-0 right-0 opacity-30' />
+        <FooterPattern design={1} className=' w-[80vw] top-0 left-0 -scale-100 opacity-30' />
       </div>
     );
   }
@@ -92,11 +92,11 @@ export default function SharedLinksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="min-h-screen bg-slate-900 relative">
       <main className="max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-12">
-          <h1 className="text-6xl heading-text-2 font-anton mb-4">SHARED LINKS</h1>
-          <p className="text-xl font-freeman">
+          <h1 className="text-6xl heading-text-2 font-anton mb-4 text-white">SHARED LINKS</h1>
+          <p className="text-xl font-freeman text-slate-300">
             Manage your public and monetized shared links
           </p>
         </div>
@@ -104,9 +104,9 @@ export default function SharedLinksPage() {
         <DashboardCard />
         
         {/* Filters */}
-        <div className="bg-white border-2 border-black brutal-shadow-left p-6 mb-8">
+        <div className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left p-6 mb-8 rounded-lg">
           <div className="flex flex-wrap items-center gap-4">
-            <span className="text-lg font-freeman">Filter by type:</span>
+            <span className="text-lg font-freeman text-white">Filter by type:</span>
             <div className="flex flex-wrap gap-3">
               {[
                 { key: 'all', label: 'All Links', count: pagination.totalItems },
@@ -116,10 +116,10 @@ export default function SharedLinksPage() {
                 <button
                   key={key}
                   onClick={() => setFilter(key as any)}
-                  className={`px-4 py-2 border-2 border-black font-freeman transition-all ${
+                  className={`px-4 py-2 border-2 border-slate-600 font-freeman transition-all rounded ${
                     filter === key
-                      ? 'bg-primary button-primary-pressed'
-                      : 'bg-white button-primary duration-100'
+                      ? 'neopop-gradient-primary button-primary-pressed text-white'
+                      : 'bg-slate-800 button-primary duration-100 text-slate-300 hover:bg-slate-700'
                   }`}
                 >
                   {label} {count !== '?' && `(${count})`}
@@ -137,7 +137,7 @@ export default function SharedLinksPage() {
             </div>
           ) : links.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-lg font-freeman">No shared links found</p>
+              <p className="text-lg font-freeman text-slate-300">No shared links found</p>
             </div>
           ) : (
             <>
@@ -173,8 +173,8 @@ export default function SharedLinksPage() {
           )}
         </div>
       </main>
-      <FooterPattern design={1} className='w-[80vw] bottom-0 right-0' />
-      <FooterPattern design={1} className='w-[80vw] top-0 left-0 -scale-100' />
+      <FooterPattern design={1} className='w-[80vw] bottom-0 right-0 opacity-30' />
+      <FooterPattern design={1} className='w-[80vw] top-0 left-0 -scale-100 opacity-30' />
     </div>
   );
 } 

@@ -191,78 +191,78 @@ export default function ListingDetailPage() {
 
   if (!listing || loading) {
     return (
-      <div className="min-h-screen bg-white relative">
+      <div className="min-h-screen bg-slate-900 relative">
         <main className="max-w-3xl mx-auto py-16 px-4 sm:px-6 lg:px-8 relative z-10">
           <nav className="mb-6">
             <Link
               href="/marketplace"
-              className="button-primary bg-white px-4 py-1.5 inline-flex items-center font-freeman text-sm"
+              className="button-primary bg-slate-800 px-4 py-1.5 inline-flex items-center font-freeman text-sm text-white hover:bg-slate-700 rounded"
             >
               ← Back to Marketplace
             </Link>
           </nav>
           <div className="flex justify-center items-center min-h-[400px]">
             <div className="text-center">
-              <h2 className="heading-text-2 text-6xl font-anton mb-8">LOADING</h2>
+              <h2 className="heading-text-2 text-6xl font-anton mb-8 text-white">LOADING</h2>
               <div className='flex justify-center items-center mt-10'>
                 <Loader />
               </div>
             </div>
           </div>
         </main>
-        <FooterPattern design={1} className='w-[80vw] bottom-0 right-0' />
-        <FooterPattern design={1} className='w-[80vw] top-0 left-0 -scale-100' />
+        <FooterPattern design={1} className=opacity-30 />
+        <FooterPattern design={1} className=opacity-30 />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-white relative">
+      <div className="min-h-screen bg-slate-900 relative">
         <main className="max-w-3xl mx-auto py-16 px-4 sm:px-6 lg:px-8 relative z-10">
           <nav className="mb-6">
             <Link
               href="/marketplace"
-              className="button-primary bg-white px-4 py-1.5 inline-flex items-center font-freeman text-sm"
+              className="button-primary bg-slate-800 px-4 py-1.5 inline-flex items-center font-freeman text-sm text-white hover:bg-slate-700 rounded"
             >
               ← Back to Marketplace
             </Link>
           </nav>
-          <div className="bg-red-100 border-2 border-black p-8 brutal-shadow-left">
-            <h3 className="text-xl font-freeman mb-4">
+          <div className="bg-red-900 border-2 border-red-600 p-8 brutal-shadow-left rounded-lg">
+            <h3 className="text-xl font-freeman mb-4 text-white">
               Error loading listing
             </h3>
-            <p className="font-freeman mb-6">{error}</p>
+            <p className="font-freeman mb-6 text-slate-300">{error}</p>
             <button
               onClick={fetchListing}
-              className="button-primary bg-primary px-8 py-2"
+              className="button-primary neopop-gradient-primary px-8 py-2 rounded-lg hover:neopop-glow"
             >
               Try again
             </button>
           </div>
         </main>
-        <FooterPattern design={1} className='w-[80vw] bottom-0 right-0' />
-        <FooterPattern design={1} className='w-[80vw] top-0 left-0 -scale-100' />
+        <FooterPattern design={1} className=opacity-30 />
+        <FooterPattern design={1} className=opacity-30 />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="min-h-screen bg-slate-900 relative">
       <main className="max-w-3xl mx-auto py-16 px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Navigation */}
         <nav className="mb-6">
           <Link
             href="/marketplace"
-            className="button-primary bg-white px-4 py-1.5 inline-flex items-center font-freeman text-sm"
+            className="button-primary bg-slate-900 px-4 py-1.5 inline-flex items-center font-freeman text-sm"
           >
             ← Back to Marketplace
           </Link>
         </nav>
 
-        <div className="bg-amber-100 border-2 border-black brutal-shadow-left">
+        <div className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left rounded-lg">
           {/* Header */}
-          <div className="p-6 border-b-2 border-black">
+          <div className="p-6 border-b-2 border-slate-600">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               {/* Left side content */}
               <div className="flex items-start gap-4">
@@ -270,8 +270,8 @@ export default function ListingDetailPage() {
                   {createElement(listing.item?.type === 'folder' ? FaFolder : getFileIcon(listing.item?.mimeType), { className: "w-12 h-12" })}
                 </span>
                 <div className="min-w-0">
-                  <h1 className="text-2xl font-freeman mb-2 break-words">{listing.title}</h1>
-                  <div className="flex flex-wrap items-center gap-2 text-sm font-freeman text-gray-700">
+                  <h1 className="text-2xl font-freeman mb-2 break-words text-white">{listing.title}</h1>
+                  <div className="flex flex-wrap items-center gap-2 text-sm font-freeman text-slate-400">
                     <span className="break-words">by {listing.seller.name}</span>
                     <span className="hidden sm:inline">•</span>
                     <span>{listing.views} {listing.views === 1 ? 'view' : 'views'}</span>
@@ -283,10 +283,10 @@ export default function ListingDetailPage() {
 
               {/* Right side content */}
               <div className="flex flex-row sm:flex-col items-center sm:items-end gap-2 sm:gap-1">
-                <span className="px-3 py-1 bg-primary border-2 border-black font-freeman text-sm brutal-shadow-center whitespace-nowrap">
+                <span className="px-3 py-1 neopop-gradient-primary border-2 border-slate-600 font-freeman text-sm brutal-shadow-center whitespace-nowrap text-white rounded">
                   {listing.status.toUpperCase()}
                 </span>
-                <span className="text-2xl font-freeman">
+                <span className="text-2xl font-freeman text-white">
                   {formatPrice(listing.price)}
                 </span>
               </div>
@@ -300,8 +300,8 @@ export default function ListingDetailPage() {
               <div className="lg:col-span-2 space-y-6">
                 {/* Affiliate Notification */}
                 {affiliateValidated && affiliateInfo && (
-                  <div className="bg-green-100 border-2 border-green-400 p-4 brutal-shadow-left">
-                    <p className="font-freeman text-sm">
+                  <div className="bg-green-900 border-2 border-green-600 p-4 brutal-shadow-left rounded-lg">
+                    <p className="font-freeman text-sm text-green-200">
                       <span className="font-bold">You are buying through an affiliate link.</span> The referrer will earn {affiliateInfo.commissionRate}% commission.
                     </p>
                   </div>
@@ -309,19 +309,19 @@ export default function ListingDetailPage() {
 
                 {/* Description */}
                 <div>
-                  <h2 className="text-lg font-freeman mb-2">Description</h2>
-                  <p className="font-freeman text-sm whitespace-pre-wrap">{listing.description}</p>
+                  <h2 className="text-lg font-freeman mb-2 text-white">Description</h2>
+                  <p className="font-freeman text-sm whitespace-pre-wrap text-slate-300">{listing.description}</p>
                 </div>
 
                 {/* Tags */}
                 {listing.tags && listing.tags.length > 0 && (
                   <div>
-                    <h2 className="text-lg font-freeman mb-2">Tags</h2>
+                    <h2 className="text-lg font-freeman mb-2 text-white">Tags</h2>
                     <div className="flex flex-wrap gap-2">
                       {listing.tags.map((tag: string, index: number) => (
                         <span
                           key={index}
-                          className="px-2 py-0.5 bg-primary border-2 border-black font-freeman text-sm brutal-shadow-center"
+                          className="px-2 py-0.5 neopop-gradient-primary border-2 border-slate-600 font-freeman text-sm brutal-shadow-center text-white rounded"
                         >
                           {tag}
                         </span>
@@ -334,12 +334,12 @@ export default function ListingDetailPage() {
               {/* Sidebar */}
               <div className="space-y-4">
                 {/* File Information */}
-                <div className="bg-white border-2 border-black p-4 brutal-shadow-left">
-                  <h3 className="text-lg font-freeman mb-3">File Details</h3>
-                  <div className="space-y-2 font-freeman text-sm">
+                <div className="bg-slate-700 border-2 border-slate-600 p-4 brutal-shadow-left rounded-lg">
+                  <h3 className="text-lg font-freeman mb-3 text-white">File Details</h3>
+                  <div className="space-y-2 font-freeman text-sm text-slate-300">
                     <div className="flex justify-between">
                       <span>Name:</span>
-                      <span className="font-medium">{listing.item.name}</span>
+                      <span className="font-medium text-white">{listing.item.name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Type:</span>
@@ -366,26 +366,26 @@ export default function ListingDetailPage() {
                     <button
                       onClick={handlePurchase}
                       disabled={purchaseLoading}
-                      className="button-primary bg-primary w-full py-3 px-4 text-sm font-freeman"
+                      className="button-primary neopop-gradient-primary w-full py-3 px-4 text-sm font-freeman rounded-lg hover:neopop-glow"
                     >
                       {purchaseLoading ? 'Processing Purchase...' : `Purchase for ${formatPrice(listing.price)}`}
                     </button>
                   )}
 
                   {purchaseSuccess && (
-                    <div className="bg-green-100 border-2 border-black p-4 font-freeman text-sm brutal-shadow-left">
+                    <div className="bg-green-900 border-2 border-green-600 p-4 font-freeman text-sm brutal-shadow-left rounded-lg">
                       ✅ Purchase completed! File added to your marketplace folder.
                     </div>
                   )}
 
                   {alreadyPurchased && (
-                    <div className="bg-white border-2 border-black p-4 font-freeman text-sm brutal-shadow-left">
+                    <div className="bg-slate-900 border-2 border-black p-4 font-freeman text-sm brutal-shadow-left">
                       You have already purchased this item.
                     </div>
                   )}
 
                   {checkingPurchase && (
-                    <div className="bg-white border-2 border-black p-4 font-freeman text-sm brutal-shadow-left">
+                    <div className="bg-slate-900 border-2 border-black p-4 font-freeman text-sm brutal-shadow-left">
                       Checking purchase status...
                     </div>
                   )}
@@ -394,7 +394,7 @@ export default function ListingDetailPage() {
                     <div className="space-y-2">
                       <Link
                         href={`/marketplace/${listing._id}/edit`}
-                        className="button-primary bg-primary w-full py-2 px-4 text-sm text-center mt-5"
+                        className="button-primary neopop-gradient-primary w-full py-2 px-4 text-sm text-center mt-5 rounded-lg hover:neopop-glow"
                       >
                         Edit Listing
                       </Link>
@@ -402,7 +402,7 @@ export default function ListingDetailPage() {
                         <button
                           onClick={handleRemoveListing}
                           disabled={deleteLoading}
-                          className="button-primary bg-red-100 w-full py-2 px-4 text-sm mt-5"
+                          className="button-primary bg-red-900 w-full py-2 px-4 text-sm mt-5 rounded-lg hover:bg-red-800"
                         >
                           {deleteLoading ? 'Removing...' : 'Remove Listing'}
                         </button>
@@ -411,7 +411,7 @@ export default function ListingDetailPage() {
                   )}
 
                   {listing.status === 'inactive' && (
-                    <div className="bg-white border-2 border-black p-4 font-freeman text-sm brutal-shadow-left text-center">
+                    <div className="bg-slate-700 border-2 border-slate-600 p-4 font-freeman text-sm brutal-shadow-left text-center rounded-lg">
                       This listing is currently inactive
                     </div>
                   )}
@@ -419,19 +419,19 @@ export default function ListingDetailPage() {
 
                 {/* Affiliate Section */}
                 {listing.affiliateEnabled && !isOwner && (
-                  <div className="bg-white border-2 border-black p-4 brutal-shadow-left">
+                  <div className="bg-slate-700 border-2 border-slate-600 p-4 brutal-shadow-left rounded-lg">
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-lg font-freeman">Affiliate Program</h3>
-                      <span className="text-sm font-freeman text-green-600">
+                      <h3 className="text-lg font-freeman text-white">Affiliate Program</h3>
+                      <span className="text-sm font-freeman text-green-400">
                         {listing.defaultCommissionRate}% commission
                       </span>
                     </div>
-                    <p className="text-sm font-freeman mb-3">
+                    <p className="text-sm font-freeman mb-3 text-slate-300">
                       Earn commission by sharing this listing with others.
                     </p>
                     <button
                       onClick={() => setShowAffiliateModal(true)}
-                      className="button-primary bg-white w-full py-2 px-4 text-sm"
+                      className="button-primary bg-slate-800 w-full py-2 px-4 text-sm text-white hover:bg-slate-700 rounded-lg"
                     >
                       <FiUsers className="inline mr-2" />
                       Become an Affiliate
@@ -461,8 +461,8 @@ export default function ListingDetailPage() {
         />
       )}
 
-      <FooterPattern design={1} className='w-[80vw] bottom-0 right-0' />
-      <FooterPattern design={1} className='w-[80vw] top-0 left-0 -scale-100' />
+      <FooterPattern design={1} className=opacity-30 />
+      <FooterPattern design={1} className=opacity-30 />
     </div>
   );
 } 

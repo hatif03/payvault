@@ -164,7 +164,7 @@ export default function AffiliatesPage() {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
         <Loader />
       </div>
     );
@@ -175,14 +175,14 @@ export default function AffiliatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="min-h-screen bg-slate-900 relative">
       <main className="max-w-7xl mx-auto py-24 px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="heading-text-2 text-6xl font-anton mb-4">
+          <h1 className="heading-text-2 text-6xl font-anton mb-4 text-white">
             AFFILIATE PROGRAM
           </h1>
-          <p className="font-freeman text-xl max-w-2xl mx-auto">
+          <p className="font-freeman text-xl max-w-2xl mx-auto text-slate-300">
             Manage your affiliate partnerships and track your earnings
           </p>
         </div>
@@ -191,46 +191,46 @@ export default function AffiliatesPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-green-100 border-2 border-black brutal-shadow-left p-4 text-center">
-            <h3 className="font-anton text-2xl">${stats.totalEarned.toFixed(2)}</h3>
-            <p className="font-freeman text-sm">Total Earned</p>
+          <div className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left p-4 text-center rounded-lg">
+            <h3 className="font-anton text-2xl text-white">${stats.totalEarned.toFixed(2)}</h3>
+            <p className="font-freeman text-sm text-slate-300">Total Earned</p>
           </div>
-          <div className="bg-yellow-100 border-2 border-black brutal-shadow-left p-4 text-center">
-            <h3 className="font-anton text-2xl">${stats.pendingCommissions.toFixed(2)}</h3>
-            <p className="font-freeman text-sm">Pending Commissions</p>
+          <div className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left p-4 text-center rounded-lg">
+            <h3 className="font-anton text-2xl text-white">${stats.pendingCommissions.toFixed(2)}</h3>
+            <p className="font-freeman text-sm text-slate-300">Pending Commissions</p>
           </div>
-          <div className="bg-blue-100 border-2 border-black brutal-shadow-left p-4 text-center">
-            <h3 className="font-anton text-2xl">${stats.totalOwed.toFixed(2)}</h3>
-            <p className="font-freeman text-sm">Total Owed</p>
+          <div className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left p-4 text-center rounded-lg">
+            <h3 className="font-anton text-2xl text-white">${stats.totalOwed.toFixed(2)}</h3>
+            <p className="font-freeman text-sm text-slate-300">Total Owed</p>
           </div>
-          <div className="bg-purple-100 border-2 border-black brutal-shadow-left p-4 text-center">
-            <h3 className="font-anton text-2xl">{stats.activeAffiliates}</h3>
-            <p className="font-freeman text-sm">Active Affiliates</p>
+          <div className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left p-4 text-center rounded-lg">
+            <h3 className="font-anton text-2xl text-white">{stats.activeAffiliates}</h3>
+            <p className="font-freeman text-sm text-slate-300">Active Affiliates</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-2 border-black bg-white mb-6">
+        <div className="flex border-2 border-slate-600 bg-slate-800 mb-6 rounded-lg">
           <button
             onClick={() => setActiveTab('owned')}
-            className={`flex-1 px-6 py-3 font-freeman border-r-2 border-black ${
-              activeTab === 'owned' ? 'bg-[#FFD000]' : 'bg-white hover:bg-gray-50'
+            className={`flex-1 px-6 py-3 font-freeman border-r-2 border-slate-600 rounded-l-lg ${
+              activeTab === 'owned' ? 'neopop-gradient-primary text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             My Content Affiliates
           </button>
           <button
             onClick={() => setActiveTab('affiliate')}
-            className={`flex-1 px-6 py-3 font-freeman border-r-2 border-black ${
-              activeTab === 'affiliate' ? 'bg-[#FFD000]' : 'bg-white hover:bg-gray-50'
+            className={`flex-1 px-6 py-3 font-freeman border-r-2 border-slate-600 ${
+              activeTab === 'affiliate' ? 'neopop-gradient-primary text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             My Partnerships
           </button>
           <button
             onClick={() => setActiveTab('transactions')}
-            className={`flex-1 px-6 py-3 font-freeman ${
-              activeTab === 'transactions' ? 'bg-[#FFD000]' : 'bg-white hover:bg-gray-50'
+            className={`flex-1 px-6 py-3 font-freeman rounded-r-lg ${
+              activeTab === 'transactions' ? 'neopop-gradient-primary text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             Transactions
@@ -243,11 +243,11 @@ export default function AffiliatesPage() {
             <Loader />
           </div>
         ) : error ? (
-          <div className="bg-red-100 border-2 border-red-300 p-8 text-center">
-            <p className="font-freeman text-lg text-red-700">{error}</p>
+          <div className="bg-red-900 border-2 border-red-600 p-8 text-center rounded-lg">
+            <p className="font-freeman text-lg text-red-200">{error}</p>
             <button
               onClick={fetchData}
-              className="mt-4 button-primary bg-[#FFD000] px-6 py-2"
+              className="mt-4 button-primary neopop-gradient-primary px-6 py-2 rounded-lg hover:neopop-glow"
             >
               Try Again
             </button>
@@ -257,31 +257,31 @@ export default function AffiliatesPage() {
             {activeTab === 'transactions' ? (
               <div className="space-y-4">
                 {transactions.length === 0 ? (
-                  <div className="text-center py-12 bg-amber-100 border-2 border-black brutal-shadow-left">
-                    <p className="font-freeman text-lg">No transactions found</p>
+                  <div className="text-center py-12 bg-slate-800 border-2 border-slate-600 brutal-shadow-left rounded-lg">
+                    <p className="font-freeman text-lg text-slate-300">No transactions found</p>
                   </div>
                 ) : (
                   transactions.map((transaction) => (
-                    <div key={transaction._id} className="bg-white border-2 border-black brutal-shadow-left p-4">
+                    <div key={transaction._id} className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left p-4 rounded-lg">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-freeman text-sm text-gray-600">
+                          <p className="font-freeman text-sm text-slate-400">
                             {new Date(transaction.createdAt).toLocaleDateString()}
                           </p>
-                          <p className="font-anton text-lg">
+                          <p className="font-anton text-lg text-white">
                             ${transaction.commissionAmount.toFixed(2)} commission
                           </p>
-                          <p className="font-freeman text-sm">
+                          <p className="font-freeman text-sm text-slate-300">
                             {transaction.commissionRate}% of ${transaction.originalTransaction.amount.toFixed(2)} sale
                           </p>
-                          <p className="font-freeman text-sm">
+                          <p className="font-freeman text-sm text-slate-300">
                             Code: {transaction.affiliate.affiliateCode}
                           </p>
                         </div>
-                        <span className={`px-3 py-1 text-xs font-freeman border-2 border-black ${
-                          transaction.status === 'paid' ? 'bg-green-100' :
-                          transaction.status === 'pending' ? 'bg-yellow-100' :
-                          'bg-red-100'
+                        <span className={`px-3 py-1 text-xs font-freeman border-2 border-slate-600 rounded ${
+                          transaction.status === 'paid' ? 'bg-green-900 text-green-200' :
+                          transaction.status === 'pending' ? 'bg-yellow-900 text-yellow-200' :
+                          'bg-red-900 text-red-200'
                         }`}>
                           {transaction.status.toUpperCase()}
                         </span>
@@ -293,8 +293,8 @@ export default function AffiliatesPage() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {affiliates.length === 0 ? (
-                  <div className="col-span-full text-center py-12 bg-amber-100 border-2 border-black brutal-shadow-left">
-                    <p className="font-freeman text-lg">
+                  <div className="col-span-full text-center py-12 bg-slate-800 border-2 border-slate-600 brutal-shadow-left rounded-lg">
+                    <p className="font-freeman text-lg text-slate-300">
                       {activeTab === 'owned' 
                         ? 'No affiliates set up for your content yet'
                         : 'You are not an affiliate for any content yet'
@@ -318,8 +318,8 @@ export default function AffiliatesPage() {
         )}
       </main>
 
-      <FooterPattern design={1} className='w-[80vw] bottom-0 right-0' />
-      <FooterPattern design={1} className='w-[80vw] top-0 left-0 -scale-100' />
+      <FooterPattern design={1} className='w-[80vw] bottom-0 right-0 opacity-30' />
+      <FooterPattern design={1} className='w-[80vw] top-0 left-0 -scale-100 opacity-30' />
     </div>
   );
 }
