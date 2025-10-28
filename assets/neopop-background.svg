@@ -1,0 +1,52 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:0.1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:0.05" />
+      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:0.1" />
+    </linearGradient>
+    <linearGradient id="gradient2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:0.08" />
+      <stop offset="50%" style="stop-color:#06b6d4;stop-opacity:0.05" />
+      <stop offset="100%" style="stop-color:#10b981;stop-opacity:0.08" />
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#374151" stroke-width="0.5" opacity="0.3"/>
+    </pattern>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="400" height="400" fill="url(#gradient1)"/>
+  
+  <!-- Grid pattern -->
+  <rect width="400" height="400" fill="url(#grid)"/>
+  
+  <!-- Floating geometric shapes -->
+  <circle cx="80" cy="80" r="20" fill="url(#gradient2)" opacity="0.6"/>
+  <circle cx="320" cy="120" r="15" fill="url(#gradient1)" opacity="0.7"/>
+  <circle cx="60" cy="300" r="25" fill="url(#gradient2)" opacity="0.5"/>
+  <circle cx="340" cy="320" r="18" fill="url(#gradient1)" opacity="0.6"/>
+  
+  <!-- Rectangular shapes -->
+  <rect x="120" y="60" width="30" height="30" rx="8" fill="url(#gradient2)" opacity="0.6" transform="rotate(15 135 75)"/>
+  <rect x="250" y="200" width="25" height="25" rx="6" fill="url(#gradient1)" opacity="0.7" transform="rotate(-20 262.5 212.5)"/>
+  <rect x="50" y="180" width="35" height="35" rx="10" fill="url(#gradient2)" opacity="0.5" transform="rotate(30 67.5 197.5)"/>
+  
+  <!-- Hexagonal shapes -->
+  <polygon points="200,50 220,60 220,80 200,90 180,80 180,60" fill="url(#gradient1)" opacity="0.6"/>
+  <polygon points="300,250 315,258 315,272 300,280 285,272 285,258" fill="url(#gradient2)" opacity="0.7"/>
+  
+  <!-- Diamond shapes -->
+  <polygon points="150,150 170,160 150,170 130,160" fill="url(#gradient1)" opacity="0.6" transform="rotate(45 150 160)"/>
+  <polygon points="280,80 295,90 280,100 265,90" fill="url(#gradient2)" opacity="0.5" transform="rotate(-30 280 90)"/>
+  
+  <!-- Subtle lines -->
+  <line x1="0" y1="200" x2="400" y2="200" stroke="url(#gradient1)" stroke-width="2" opacity="0.3"/>
+  <line x1="200" y1="0" x2="200" y2="400" stroke="url(#gradient2)" stroke-width="2" opacity="0.3"/>
+  
+  <!-- Corner accents -->
+  <circle cx="20" cy="20" r="8" fill="#06b6d4" opacity="0.4"/>
+  <circle cx="380" cy="20" r="6" fill="#8b5cf6" opacity="0.5"/>
+  <circle cx="20" cy="380" r="10" fill="#6366f1" opacity="0.3"/>
+  <circle cx="380" cy="380" r="7" fill="#10b981" opacity="0.4"/>
+</svg>
