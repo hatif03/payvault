@@ -24,35 +24,39 @@ export async function GET(request: Request) {
 
     await connectDB();
 
-    const targetItem = await Item.findOne({ 
-      _id: itemId, 
-      owner: userSession.user.id 
-    });
+    // Find the target item by ID
+    const targetItem = await Item.findById(itemId);
     
-    if (!targetItem) {
+    if (!targetItem || targetItem.owner !== userSession.user.id) {
       return NextResponse.json({ error: 'Item not found or unauthorized' }, { status: 404 });
     }
 
     const path: any[] = [];
     let currentId = itemId;
 
+    // Build breadcrumb path by traversing up the parent chain
     while (currentId) {
-      const item = await Item.findOne({ 
-        _id: currentId, 
-        owner: userSession.user.id 
-      });
+      const item = await Item.findById(currentId);
       
-      if (!item) break;
+      if (!item || item.owner !== userSession.user.id) break;
 
       path.unshift({
-        id: item._id,
+        id: item.id,
         name: item.name,
-        type: item?.type
+        type: item.type
       });
 
-      if (item._id.toString() === userSession.user.rootFolder?.toString()) break;
-      currentId = item.parentId;
+      // Stop if we've reached the root folder
+      if (item.id === userSession.user.rootFolder) break;
+      
+      // Move to parent folder
+      currentId = item.parentId || null;
+      
+      // Prevent infinite loops
+      if (!currentId || currentId === item.id) break;
     }
+
+    console.log(`Breadcrumb path for ${itemId}:`, path.map(p => p.name).join(' > '));
 
     return NextResponse.json(path);
 

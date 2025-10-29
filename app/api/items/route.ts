@@ -21,11 +21,15 @@ export async function GET(request: Request) {
 
     let items;
     if (parentId) {
+      console.log('Fetching items for parentId:', parentId);
       items = await Item.findByParent(parentId);
+      console.log(`Found ${items.length} items for parentId ${parentId}`);
     } else {
       // Return root folder if no parentId specified
+      console.log('Fetching root folder:', session.user.rootFolder);
       const rootFolder = await Item.findById(session.user.rootFolder);
       items = rootFolder ? [rootFolder] : [];
+      console.log('Root folder found:', rootFolder ? 'Yes' : 'No');
     }
 
     // Filter by owner
@@ -35,12 +39,22 @@ export async function GET(request: Request) {
     const start = (page - 1) * limit;
     const pageItems = items.slice(start, start + limit);
 
+    // Transform items to match frontend format (_id instead of id)
+    const transformedItems = pageItems.map(item => ({
+      ...item,
+      _id: item.id,
+      mime: item.mimeType,
+      parentId: item.parentId || null,
+    }));
+
+    console.log(`Returning ${transformedItems.length} items (${transformedItems.filter(i => i.type === 'folder').length} folders, ${transformedItems.filter(i => i.type === 'file').length} files)`);
+
     return NextResponse.json({
-      items: pageItems,
+      items: transformedItems,
       pagination: {
         current: page,
         total: Math.ceil(totalItems / limit),
-        count: pageItems.length,
+        count: transformedItems.length,
         totalItems,
         hasNextPage: start + limit < totalItems,
         hasPreviousPage: page > 1,
@@ -97,7 +111,15 @@ export async function POST(request: NextRequest) {
         url: fileUrl
       });
 
-      return NextResponse.json(item, { status: 201 });
+      // Transform to match frontend format
+      const transformedItem = {
+        ...item,
+        _id: item.id,
+        mime: item.mimeType,
+        parentId: item.parentId || null,
+      };
+
+      return NextResponse.json(transformedItem, { status: 201 });
     } else {
       const body = await request.json();
       const { name, parentId, type } = body;
@@ -117,7 +139,17 @@ export async function POST(request: NextRequest) {
         owner: session.user.id
       });
 
-      return NextResponse.json(item, { status: 201 });
+      // Transform to match frontend format
+      const transformedItem = {
+        ...item,
+        _id: item.id,
+        mime: item.mimeType,
+        parentId: item.parentId || null,
+      };
+
+      console.log('Created item:', transformedItem._id, transformedItem.name, transformedItem.type);
+
+      return NextResponse.json(transformedItem, { status: 201 });
     }
   } catch (error: any) {
     console.error('API Error:', error);

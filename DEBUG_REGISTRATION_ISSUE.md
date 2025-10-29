@@ -133,3 +133,4 @@ Login successful for: test@example.com
 4. **Try the quick fixes** if needed
 
 The debug logs will help us identify exactly where the issue is occurring!
+

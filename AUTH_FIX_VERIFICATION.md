@@ -69,3 +69,4 @@ Firestore not initialized, using mock mode for items
 - [ ] App redirects to dashboard after successful auth
 
 The authentication system is now **fully functional** in mock mode! 🎉
+

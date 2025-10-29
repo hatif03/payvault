@@ -78,13 +78,22 @@ export async function getBreadcrumbPath(folderId: string): Promise<BreadcrumbIte
     if (Array.isArray(response.data)) {
       return response.data.map((item: any) => ({ id: item.id, name: item.name, type: item?.type }));
     } else {
-      throw new Error('Invalid response format');
+      console.warn('Invalid breadcrumb response format, returning empty path');
+      return [];
     }
   } catch (error: any) {
+    console.error('Error fetching breadcrumb path:', error);
     if (error.response && error.response.status === 401) {
       throw new Error('Unauthorized');
     }
-    throw new Error(error.message || 'Failed to fetch breadcrumb path');
+    if (error.response && error.response.status === 404) {
+      // Item not found - return empty path rather than crashing
+      console.warn('Item not found for breadcrumb, returning empty path');
+      return [];
+    }
+    // For other errors, return empty path to prevent UI breakage
+    console.warn('Failed to fetch breadcrumb path, returning empty path');
+    return [];
   }
 }
 

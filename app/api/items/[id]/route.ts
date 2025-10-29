@@ -21,7 +21,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Item not found' }, { status: 404 });
     }
 
-    return NextResponse.json(item);
+    // Transform to match frontend format
+    const transformedItem = {
+      ...item,
+      _id: item.id,
+      mime: item.mimeType,
+      parentId: item.parentId || null,
+    };
+
+    return NextResponse.json(transformedItem);
   } catch (error: any) {
     console.error('GET /api/items/[id] error:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
@@ -68,7 +76,15 @@ export async function PUT(request: NextRequest) {
 
     const updatedItem = await Item.update(id, updateData);
 
-    return NextResponse.json(updatedItem);
+    // Transform to match frontend format
+    const transformedItem = updatedItem ? {
+      ...updatedItem,
+      _id: updatedItem.id,
+      mime: updatedItem.mimeType,
+      parentId: updatedItem.parentId || null,
+    } : null;
+
+    return NextResponse.json(transformedItem);
   } catch (error: any) {
     console.error('PUT /api/items/[id] error:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
