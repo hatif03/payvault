@@ -4,6 +4,9 @@ import { Listing } from '@/app/models/Listing'
 import { Transaction } from '@/app/models/Transaction'
 import { Item } from '@/app/models/Item'
 import connectDB from '@/app/lib/mongodb'
+import { secrets } from '@/app/lib/config'
+import { createFacilitator, settleRequestPayment } from '@/app/lib/payments/x402Server'
+import { getArcChain } from '@/app/lib/payments/arcChain'
 
 const generateReceiptNumber = (): string => {
   const timestamp = Date.now().toString(36).toUpperCase()
@@ -24,6 +27,28 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     if (listing.status !== 'active') return NextResponse.json({ error: 'This listing is no longer available for purchase' }, { status: 400 })
     if (listing.seller === userId) return NextResponse.json({ error: 'You cannot purchase your own listing' }, { status: 400 })
 
+    // thirdweb x402 settlement
+    if (secrets.THIRDWEB_SECRET_KEY && secrets.SERVER_WALLET_ADDRESS) {
+      const facil = createFacilitator(secrets.THIRDWEB_SECRET_KEY, secrets.SERVER_WALLET_ADDRESS as `0x${string}`)
+      const payResult = await settleRequestPayment({
+        resourceUrl: `${secrets.NEXTAUTH_URL}/api/listings/${id}/purchase`,
+        method: 'POST',
+        paymentData: request.headers.get('x-payment'),
+        payTo: listing.seller as `0x${string}`,
+        network: getArcChain(),
+        price: `$${listing.price}`,
+        facilitatorInstance: facil,
+        description: `Purchase: ${listing.title}`,
+      })
+
+      if (payResult.status !== 200) {
+        return new NextResponse(JSON.stringify(payResult.responseBody), {
+          status: payResult.status,
+          headers: payResult.responseHeaders as any,
+        })
+      }
+    }
+
     const existingTransaction = await Transaction.findOne({
       listing: id,
       buyer: userId,
@@ -31,12 +56,10 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     })
     if (existingTransaction) return NextResponse.json({ error: 'You have already purchased this item' }, { status: 400 })
 
-    const paymentDetails = {
-      transaction: '0xMOCKTX',
-      network: 'base-sepolia',
-      payer: userId,
-      success: true
-    }
+    const paymentDetails = (() => {
+      const header = request.headers.get('x-payment-response')
+      try { return header ? JSON.parse(header) : { transaction: '0x', network: 'arc-testnet', payer: userId, success: true } } catch { return { transaction: '0x', network: 'arc-testnet', payer: userId, success: true } }
+    })()
 
     const transactionData = {
       listing: listing.id,

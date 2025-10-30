@@ -100,3 +100,6 @@ After the fix, you should see:
 
 The user registration system is now **fully functional** even without Firebase configured!
 
+
+
+

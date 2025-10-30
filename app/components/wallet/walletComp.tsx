@@ -8,6 +8,10 @@ import { BiMoney } from 'react-icons/bi';
 import { FaCheckCircle, FaWallet } from 'react-icons/fa';
 import { IoCopyOutline } from 'react-icons/io5';
 import { db } from '@/app/lib/mock/mockDb';
+import { ethers } from 'ethers';
+import abi from '@/app/utils/abi/erc20abi';
+import { secrets } from '@/app/lib/config';
+import { circleTransferPoc } from '@/actions/circle';
 
 interface WalletCompProps {
   compact?: boolean;
@@ -27,6 +31,21 @@ export const WalletComp = ({ compact = false }: WalletCompProps) => {
     try {
       const wallet = session?.user.wallet as `0x${string}` | undefined;
       if (!wallet) return;
+
+      // Prefer on-chain balance on Arc if configured; fallback to mock DB
+      if (secrets.ARC_RPC_URL && secrets.ARC_USDC_CONTRACT_ADDRESS) {
+        const provider = new ethers.providers.JsonRpcProvider(secrets.ARC_RPC_URL);
+        const contract = new ethers.Contract(
+          secrets.ARC_USDC_CONTRACT_ADDRESS as `0x${string}`,
+          abi,
+          provider
+        );
+        const raw = await contract.balanceOf(wallet);
+        const value = Number(raw) / 10 ** 6;
+        setBalance(value.toLocaleString());
+        return;
+      }
+
       const b = db.balances.get(wallet) ?? 0;
       setBalance(b.toLocaleString());
     } catch (error) {
@@ -56,6 +75,23 @@ export const WalletComp = ({ compact = false }: WalletCompProps) => {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  async function sendPocTransfer() {
+    try {
+      if (!session?.user?.wallet) return;
+      setIsLoading(true);
+      const res = await circleTransferPoc(session.user.wallet as `0x${string}`, 0.01);
+      if (res?.ok) {
+        fetchBalance();
+      } else {
+        console.log('Circle PoC transfer did not execute:', res?.reason);
+      }
+    } catch (e) {
+      console.error('Circle PoC transfer error:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (session) {
@@ -307,6 +343,25 @@ export const WalletComp = ({ compact = false }: WalletCompProps) => {
                   >
                     Get more from Circle Faucet →
                   </a>
+                  {/* Circle PoC Transfer */}
+                  <button
+                    onClick={sendPocTransfer}
+                    disabled={isLoading}
+                    className="w-full button-primary bg-white border-2 border-black px-6 py-3 
+                             disabled:opacity-50 disabled:cursor-not-allowed duration-100"
+                  >
+                    <div className="flex flex-col items-center">
+                      <div className='flex gap-2 items-center'>
+                        {isLoading ? (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-black" />
+                        ) : (
+                          <BiMoney className="h-5 w-5" />
+                        )}
+                        <span>{isLoading ? 'Sending...' : 'Send 0.01 USDC (Circle PoC)'}</span>
+                      </div>
+                      <span className="text-xs">Requires Circle env set</span>
+                    </div>
+                  </button>
                 </div>
               </div>
             </div>

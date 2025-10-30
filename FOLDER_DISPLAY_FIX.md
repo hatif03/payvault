@@ -107,3 +107,6 @@ Added console logs to help track:
 4. **Verify Firebase** - Check Firestore console to see folders being created
 
 The fix is complete and folders should now display correctly in the frontend! 🎉
+
+
+

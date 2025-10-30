@@ -81,3 +81,6 @@ Root Folder > My Folder > Subfolder
 ✅ FileExplorer can navigate folders without errors
 
 The error is fixed and breadcrumbs should work correctly! 🎉
+
+
+

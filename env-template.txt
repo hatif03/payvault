@@ -25,4 +25,22 @@ NEXTAUTH_SECRET=your-random-secret-key-here-generate-with-openssl-rand-base64-32
 NEXT_PUBLIC_HOST_NAME=http://localhost:3000
 NODE_ENV=development
 
+# Arc Network
+ARC_RPC_URL=https://your-arc-testnet-rpc
+ARC_CHAIN_ID=421613
+ARC_USDC_CONTRACT_ADDRESS=0xYourArcUSDCAddress
+
+# thirdweb x402
+THIRDWEB_CLIENT_ID=your-thirdweb-client-id
+THIRDWEB_SECRET_KEY=your-thirdweb-secret-key
+SERVER_WALLET_ADDRESS=0xYourServerPayoutWallet
+
+# Circle (for later phases)
+CIRCLE_API_KEY=your-circle-api-key
+CIRCLE_APP_ID=your-circle-app-id
+CIRCLE_WALLET_ID=your-circle-wallet-id
+
+
+
+
 

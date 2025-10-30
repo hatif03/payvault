@@ -139,3 +139,6 @@ The demo app includes fallback mechanisms:
 Set `NODE_ENV=development` to see detailed logs and fallback to mock mode when Firebase is not available.
 
 
+
+
+

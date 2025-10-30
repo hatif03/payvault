@@ -5,6 +5,9 @@ import { Commission } from '@/app/models/Commission';
 import { Types } from 'mongoose';
 import { NextRequest, NextResponse } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
+import { secrets } from '@/app/lib/config';
+import { createFacilitator, settleRequestPayment } from '@/app/lib/payments/x402Server';
+import { getArcChain } from '@/app/lib/payments/arcChain';
 
 interface PaymentResponse {
   transaction: string;
@@ -112,6 +115,28 @@ export async function POST(
     }
 
     const sharedLink = await getSharedLinkWithAuth(linkId, userIdFromHeader);
+
+    // thirdweb x402 settlement
+    if (secrets.THIRDWEB_SECRET_KEY && secrets.SERVER_WALLET_ADDRESS) {
+      const facil = createFacilitator(secrets.THIRDWEB_SECRET_KEY, secrets.SERVER_WALLET_ADDRESS as `0x${string}`);
+      const payResult = await settleRequestPayment({
+        resourceUrl: `${secrets.NEXTAUTH_URL}/api/shared-links/${linkId}/purchase`,
+        method: 'POST',
+        paymentData: request.headers.get('x-payment'),
+        payTo: sharedLink.owner.wallet as `0x${string}`,
+        network: getArcChain(),
+        price: `$${sharedLink.price}`,
+        facilitatorInstance: facil,
+        description: `Purchase: ${sharedLink.title}`,
+      });
+
+      if (payResult.status !== 200) {
+        return new NextResponse(JSON.stringify(payResult.responseBody), {
+          status: payResult.status,
+          headers: payResult.responseHeaders as any,
+        });
+      }
+    }
     const paymentResponse = parsePaymentResponse(
       request.headers.get('x-payment-response')
     );

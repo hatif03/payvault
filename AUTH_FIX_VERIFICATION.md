@@ -70,3 +70,6 @@ Firestore not initialized, using mock mode for items
 
 The authentication system is now **fully functional** in mock mode! 🎉
 
+
+
+

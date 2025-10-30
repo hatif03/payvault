@@ -3,6 +3,20 @@ export const secrets = {
   NEXT_PUBLIC_HOST_NAME: process.env.NEXT_PUBLIC_HOST_NAME || 'http://localhost:3000',
   NODE_ENV: process.env.NODE_ENV || 'development',
   
+  // Circle / Arc Configuration
+  CIRCLE_API_KEY: process.env.CIRCLE_API_KEY || '',
+  CIRCLE_APP_ID: process.env.CIRCLE_APP_ID || '',
+  CIRCLE_WALLET_ID: process.env.CIRCLE_WALLET_ID || '',
+  
+  ARC_RPC_URL: process.env.ARC_RPC_URL || '',
+  ARC_CHAIN_ID: process.env.ARC_CHAIN_ID || '',
+  ARC_USDC_CONTRACT_ADDRESS: process.env.ARC_USDC_CONTRACT_ADDRESS || '',
+
+  // thirdweb x402 configuration
+  THIRDWEB_CLIENT_ID: process.env.THIRDWEB_CLIENT_ID || '',
+  THIRDWEB_SECRET_KEY: process.env.THIRDWEB_SECRET_KEY || '',
+  SERVER_WALLET_ADDRESS: process.env.SERVER_WALLET_ADDRESS || '',
+  
   // Firebase Configuration
   FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID || '',
   FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY || '',
