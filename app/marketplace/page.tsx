@@ -261,9 +261,9 @@ export default function MarketplacePage() {
           <>
             {/* Listings Grid */}
             <div className="mt-8 grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-              {listings.map((listing) => (
+              {listings.map((listing, index) => (
                 <Link 
-                  key={listing._id} 
+                  key={listing._id || `listing-${index}`} 
                   href={`/marketplace/${listing._id}`} 
                   className="block h-full transform transition-transform duration-200 hover:scale-[1.02]"
                 >

@@ -3,11 +3,7 @@ import connectDB from "@/app/lib/mongodb";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
 import { authOptions } from "@/app/lib/backend/authConfig";
-import { Types } from "mongoose";
-
-const isValidObjectId = (id: string): boolean => {
-  return Types.ObjectId.isValid(id);
-};
+// Firestore-backed demo does not use mongoose ObjectId
 
 export async function GET(
   request: NextRequest,
@@ -26,7 +22,7 @@ export async function GET(
     const params = await context.params;
     const { id } = params;
 
-    if (!id || !isValidObjectId(id)) {
+    if (!id) {
       return NextResponse.json(
         { error: "Invalid listing ID" },
         { status: 400 }
@@ -43,7 +39,7 @@ export async function GET(
     return NextResponse.json({
       hasPurchased: !!transaction,
       transaction: transaction ? {
-        id: transaction._id,
+        id: transaction.id,
         date: transaction.createdAt
       } : null
     });

@@ -29,6 +29,7 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={` antialiased text-black `}
+        suppressHydrationWarning={true}
       >
         <Provider>
           <WalletComp/>

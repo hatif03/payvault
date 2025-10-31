@@ -1,30 +1,9 @@
-import { Listing } from '@/app/lib/models';
-import connectDB from '@/app/lib/mongodb';
-import {
-  validateMonetizedContent,
-  withAuthCheck,
-  withErrorHandler,
-  withTransaction
-} from '@/app/lib/utils/controllerUtils';
-import { Types } from 'mongoose';
 import { NextRequest, NextResponse } from 'next/server';
-
-interface ListingDocument {
-  _id: Types.ObjectId;
-  seller: {
-    _id: Types.ObjectId;
-    name: string;
-    wallet: string;
-  };
-  item: {
-    name: string;
-    type: string;
-    size: number;
-    mimeType: string;
-    url: string;
-  };
-  views: number;
-}
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/lib/backend/authConfig';
+import { Listing } from '@/app/models/Listing';
+import { Item } from '@/app/models/Item';
+import { User } from '@/app/models/User';
 
 type ListingUpdateData = {
   title?: string;
@@ -34,131 +13,106 @@ type ListingUpdateData = {
   tags?: string[];
 };
 
-const isValidObjectId = (id: string): boolean => {
-  return Types.ObjectId.isValid(id);
-};
-
-const validateStatus = (status: string): status is 'active' | 'inactive' => {
+function validateStatus(status: string | undefined): status is 'active' | 'inactive' {
+  if (status === undefined) return true;
   return ['active', 'inactive'].includes(status);
-};
+}
 
-async function getListingWithAuth(
-  listingId: string,
-  userId?: string,
-  requireAuth = false
-): Promise<ListingDocument> {
-  if (!isValidObjectId(listingId)) {
-    throw new Error('Invalid listing ID format');
-  }
-  await connectDB()
-
-  const listing = await Listing.findById(listingId)
-    .populate('item', 'name type size mimeType url')
-    .populate('seller', 'name wallet')
-    .lean<ListingDocument>();
-
-  if (!listing) {
-    throw new Error('Listing not found');
-  }
-
-  if (requireAuth) {
-    if (!userId) {
-      throw new Error('Unauthorized');
-    }
-    if (listing.seller._id.toString() !== userId) {
-      throw new Error('Forbidden');
-    }
-  }
-
-  return listing;
+async function enrichListing(listing: any) {
+  const seller = listing?.seller ? await User.findById(listing.seller) : null;
+  const item = listing?.item ? await Item.findById(listing.item) : null;
+  return {
+    _id: listing.id,
+    ...listing,
+    seller: seller ? { _id: seller.id, name: seller.name, wallet: seller.wallet } : null,
+    item: item ? { name: item.name, type: item.type, size: item.size, mimeType: item.mimeType, url: item.url } : null,
+  };
 }
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandler(async () => {
+  try {
     const params = await context.params;
     const { searchParams } = new URL(request.url);
     const incrementView = searchParams.get('incrementView') === 'true';
-    
-    const listing = await getListingWithAuth(params.id);
-    
-    if (incrementView) {
-      const updatedListing = await Listing.findOneAndUpdate(
-        { _id: params.id },
-        { $inc: { views: 1 } },
-        { new: true }
-      ).lean<ListingDocument>();
-      
-      return NextResponse.json({
-        ...listing,
-        views: (updatedListing?.views ?? listing.views + 1)
-      });
+
+    const listing = await Listing.findById(params.id);
+    if (!listing) {
+      return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
     }
-    
-    return NextResponse.json(listing);
-  });
+
+    if (incrementView) {
+      const currentViews = listing.views || 0;
+      await Listing.update(listing.id, { views: currentViews + 1 } as ListingUpdateData);
+      listing.views = currentViews + 1;
+    }
+
+    const enriched = await enrichListing(listing);
+    return NextResponse.json(enriched);
+  } catch (error: any) {
+    console.error('Listings [id] GET error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  }
 }
 
 export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandler(async () => {
-    const userId = await withAuthCheck(request);
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const params = await context.params;
+    const listing = await Listing.findById(params.id);
+    if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+    if (listing.seller !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
     const body = await request.json();
     const { title, description, price, status, tags } = body as ListingUpdateData;
-    
-    if (price !== undefined) {
-      validateMonetizedContent({
-        type: 'monetized',
-        price,
-        paidUsers: []
-      });
+    if (!validateStatus(status)) {
+      return NextResponse.json({ error: 'Invalid status. Must be active or inactive' }, { status: 400 });
     }
-    
-    if (status !== undefined && !validateStatus(status)) {
-      throw new Error('Invalid status. Must be active or inactive');
-    }
-    
-    return await withTransaction(async (session) => {
-      await getListingWithAuth(params.id, userId, true);
-      
-      const updateData: ListingUpdateData = {};
-      if (title !== undefined) updateData.title = title;
-      if (description !== undefined) updateData.description = description;
-      if (price !== undefined) updateData.price = price;
-      if (status !== undefined) updateData.status = status;
-      if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
-      
-      const updatedListing = await Listing.findOneAndUpdate(
-        { _id: params.id },
-        updateData,
-        { new: true, session }
-      )
-        .populate('item', 'name type size mimeType url')
-        .populate('seller', 'name wallet')
-        .lean<ListingDocument>();
-      
-      return NextResponse.json(updatedListing);
-    });
-  });
+
+    const updateData: ListingUpdateData = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (price !== undefined) updateData.price = price;
+    if (status !== undefined) updateData.status = status;
+    if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : [];
+
+    const updated = await Listing.update(params.id, updateData);
+    if (!updated) return NextResponse.json({ error: 'Failed to update listing' }, { status: 500 });
+    const enriched = await enrichListing(updated);
+    return NextResponse.json(enriched);
+  } catch (error: any) {
+    console.error('Listings [id] PATCH error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  }
 }
 
 export async function DELETE(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  return withErrorHandler(async () => {
-    const userId = await withAuthCheck(request);
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const params = await context.params;
-    
-    return await withTransaction(async (session) => {
-      await getListingWithAuth(params.id, userId, true);
-      await Listing.findOneAndDelete({ _id: params.id }).session(session);
-      return NextResponse.json({ message: 'Listing deleted successfully' });
-    });
-  });
-} 
+    const listing = await Listing.findById(params.id);
+    if (!listing) return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
+    if (listing.seller !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+
+    const ok = await Listing.delete(params.id);
+    if (!ok) return NextResponse.json({ error: 'Failed to delete listing' }, { status: 500 });
+    return NextResponse.json({ message: 'Listing deleted successfully' });
+  } catch (error: any) {
+    console.error('Listings [id] DELETE error:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+  }
+}

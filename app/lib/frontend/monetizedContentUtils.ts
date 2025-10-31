@@ -20,7 +20,10 @@ export interface PaginatedResponse<T> {
 }
 
 export function formatDate(date: Date | string): string {
-  return formatDistanceToNow(new Date(date), { addSuffix: true });
+  if (!date) return '-';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '-';
+  return formatDistanceToNow(d, { addSuffix: true });
 }
 
 export function formatPrice(price: number): string {

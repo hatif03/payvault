@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { Listing } from '@/app/models/Listing'
 import { Transaction } from '@/app/models/Transaction'
 import { Item } from '@/app/models/Item'
+import { User } from '@/app/models/User'
 import connectDB from '@/app/lib/mongodb'
 import { secrets } from '@/app/lib/config'
 import { createFacilitator, settleRequestPayment } from '@/app/lib/payments/x402Server'
@@ -49,11 +50,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       }
     }
 
-    const existingTransaction = await Transaction.findOne({
-      listing: id,
-      buyer: userId,
-      status: 'completed'
-    })
+    // Check if user already purchased this listing
+    const userTransactions = await Transaction.findByBuyer(userId)
+    const existingTransaction = userTransactions.find(t => 
+      t.listing === id && t.status === 'completed'
+    )
     if (existingTransaction) return NextResponse.json({ error: 'You have already purchased this item' }, { status: 400 })
 
     const paymentDetails = (() => {
@@ -76,14 +77,59 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       metadata: paymentDetails
     }
 
-    const transaction = await Transaction.create(transactionData)
+    const transaction = await Transaction.createTransaction(transactionData)
     const item = await Item.findById(listing.item)
-
-    const copiedItem = item ? { 
-      id: item.id, 
-      name: item.name, 
-      path: `/marketplace/${item.name}` 
-    } : { id: listing.item, name: 'Sample PDF.pdf', path: `/marketplace/Sample PDF.pdf` }
+    
+    // Copy item to buyer's marketplace folder
+    let copiedItem = null
+    if (item) {
+      const buyer = await User.findById(userId)
+      if (!buyer) {
+        return NextResponse.json({ error: 'Buyer not found' }, { status: 404 })
+      }
+      
+      // Ensure marketplace folder exists
+      const marketplaceFolderName = 'marketplace'
+      let marketplaceFolder = await Item.findOne({ 
+        owner: userId, 
+        name: marketplaceFolderName, 
+        type: 'folder' 
+      } as any)
+      
+      if (!marketplaceFolder) {
+        marketplaceFolder = await Item.createItem({
+          name: marketplaceFolderName,
+          type: 'folder',
+          parentId: buyer.rootFolder,
+          owner: userId
+        })
+      }
+      
+      // Create a copy of the item in buyer's marketplace folder
+      const copiedItemData = await Item.createItem({
+        name: `${item.name} (Purchased)`,
+        type: item.type,
+        parentId: marketplaceFolder.id,
+        owner: userId,
+        size: item.size,
+        mimeType: item.mimeType,
+        url: item.url, // Copy the URL so the file content is accessible
+        contentSource: 'marketplace_purchase'
+      })
+      
+      copiedItem = {
+        _id: copiedItemData.id,
+        id: copiedItemData.id,
+        name: copiedItemData.name,
+        path: `/${marketplaceFolderName}/${copiedItemData.name}`
+      }
+    } else {
+      copiedItem = { 
+        id: listing.item, 
+        name: 'Item not found', 
+        path: '/marketplace' 
+      }
+    }
 
     return NextResponse.json({
       transactionData: {

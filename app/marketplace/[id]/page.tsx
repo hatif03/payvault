@@ -210,8 +210,8 @@ export default function ListingDetailPage() {
             </div>
           </div>
         </main>
-        <FooterPattern design={1} className=opacity-30 />
-        <FooterPattern design={1} className=opacity-30 />
+        <FooterPattern design={1} className='opacity-30' />
+        <FooterPattern design={1} className='opacity-30' />
       </div>
     );
   }
@@ -241,8 +241,8 @@ export default function ListingDetailPage() {
             </button>
           </div>
         </main>
-        <FooterPattern design={1} className=opacity-30 />
-        <FooterPattern design={1} className=opacity-30 />
+        <FooterPattern design={1} className='opacity-30' />
+        <FooterPattern design={1} className='opacity-30' />
       </div>
     );
   }
@@ -461,8 +461,8 @@ export default function ListingDetailPage() {
         />
       )}
 
-      <FooterPattern design={1} className=opacity-30 />
-      <FooterPattern design={1} className=opacity-30 />
+      <FooterPattern design={1} className='opacity-30' />
+      <FooterPattern design={1} className='opacity-30' />
     </div>
   );
 } 

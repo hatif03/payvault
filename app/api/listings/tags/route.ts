@@ -1,5 +1,4 @@
-import { Listing } from '@/app/lib/models';
-import connectDB from '@/app/lib/mongodb';
+import { Listing } from '@/app/models/Listing';
 import { NextRequest, NextResponse } from 'next/server';
 
 let tagsCache: string[] | null = null;
@@ -13,30 +12,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(tagsCache);
     }
 
-    await connectDB();
-    
-    const tags = await Listing.aggregate([
-      { $match: { 
-        status: 'active',
-        tags: { $exists: true, $ne: [] }
-      }},
-      // Unwind tags array
-      { $group: { 
-        _id: '$tags', 
-        count: { $sum: 1 } 
-      }},
-      { $match: { 
-        count: { $gt: 1 } 
-      }},
-      { $sort: { count: -1 } },
-      { $limit: 100 },
-      { $project: { 
-        _id: 0, 
-        tag: '$_id'
-      }}
-    ]).exec();
+    // Compute tags from Firestore-based Listing service
+    const activeListings = await Listing.findActiveListings();
+    const tagCounts: Record<string, number> = {};
+    for (const listing of activeListings) {
+      const listTags = Array.isArray(listing.tags) ? listing.tags : [];
+      for (const tag of listTags) {
+        if (!tag) continue;
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      }
+    }
+    const sorted = Object.entries(tagCounts)
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 100)
+      .map(([tag]) => tag);
 
-    tagsCache = tags.map(t => t.tag);
+    tagsCache = sorted;
     lastCacheTime = now;
     
     return NextResponse.json(tagsCache);
