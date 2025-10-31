@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { User } from '@/app/models/User';
 import { Item } from '@/app/models/Item';
 import connectDB from '@/app/lib/mongodb';
+import { CircleClient } from '@/app/lib/circle/circleClient';
+import { secrets } from '@/app/lib/config';
 import { withErrorHandler } from '@/app/lib/utils/controllerUtils';
 
 export async function POST(request: NextRequest) {
@@ -34,8 +36,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate a demo wallet address if not provided
-    const userWallet = wallet || `0x${Math.random().toString(16).substr(2, 40)}`;
+    // Create a managed wallet if not provided
+    let userWallet = wallet as `0x${string}` | undefined;
+    let circleWalletId: string | undefined;
+    if (!userWallet) {
+      const circle = new CircleClient(secrets.CIRCLE_API_KEY || '');
+      const created = await circle.createWallet({ email, name });
+      userWallet = created.address;
+      circleWalletId = created.walletId;
+    }
 
     // Create root folder for the user
     const rootFolder = await Item.createItem({
@@ -45,12 +54,13 @@ export async function POST(request: NextRequest) {
     });
 
     // Create the user
-    console.log('Creating user with data:', { email: email.toLowerCase(), name, wallet: userWallet });
+    console.log('Creating user with data:', { email: email.toLowerCase(), name, wallet: userWallet, circleWalletId });
     const newUser = await User.createUser({
       email: email.toLowerCase(),
       password,
       name,
-      wallet: userWallet,
+      wallet: userWallet as string,
+      circleWalletId,
       rootFolder: rootFolder.id,
     });
     console.log('User created successfully:', newUser.id);

@@ -25,20 +25,25 @@ NEXTAUTH_SECRET=your-random-secret-key-here-generate-with-openssl-rand-base64-32
 NEXT_PUBLIC_HOST_NAME=http://localhost:3000
 NODE_ENV=development
 
-# Arc Network
-ARC_RPC_URL=https://your-arc-testnet-rpc
-ARC_CHAIN_ID=421613
-ARC_USDC_CONTRACT_ADDRESS=0xYourArcUSDCAddress
+# Arc Testnet (from https://docs.arc.network/arc/references/connect-to-arc)
+# Server-side
+ARC_RPC_URL=https://rpc.testnet.arc.network
+ARC_CHAIN_ID=5042002
+ARC_USDC_CONTRACT_ADDRESS=0xYourArcUSDCAddress  # Get from https://docs.arc.network/arc/references/contract-addresses#usdc
+
+# Client-side (required - wallet component needs these)
+NEXT_PUBLIC_ARC_RPC_URL=https://rpc.testnet.arc.network
+NEXT_PUBLIC_ARC_USDC_CONTRACT_ADDRESS=0xYourArcUSDCAddress  # Same as ARC_USDC_CONTRACT_ADDRESS
 
 # thirdweb x402
 THIRDWEB_CLIENT_ID=your-thirdweb-client-id
 THIRDWEB_SECRET_KEY=your-thirdweb-secret-key
 SERVER_WALLET_ADDRESS=0xYourServerPayoutWallet
 
-# Circle (for later phases)
+# Circle Wallets API (from https://developers.circle.com/wallets/dev-controlled/create-your-first-wallet)
 CIRCLE_API_KEY=your-circle-api-key
-CIRCLE_APP_ID=your-circle-app-id
-CIRCLE_WALLET_ID=your-circle-wallet-id
+CIRCLE_WALLET_SET_ID=your-wallet-set-id  # Created automatically on first use, but set manually for consistency
+CIRCLE_API_URL=https://api.circle.com  # or https://api-sandbox.circle.com for testnet
 
 
 

@@ -7,10 +7,17 @@ export const secrets = {
   CIRCLE_API_KEY: process.env.CIRCLE_API_KEY || '',
   CIRCLE_APP_ID: process.env.CIRCLE_APP_ID || '',
   CIRCLE_WALLET_ID: process.env.CIRCLE_WALLET_ID || '',
+  CIRCLE_WALLET_SET_ID: process.env.CIRCLE_WALLET_SET_ID || '',
+  CIRCLE_API_URL: process.env.CIRCLE_API_URL || 'https://api.circle.com',
   
-  ARC_RPC_URL: process.env.ARC_RPC_URL || '',
-  ARC_CHAIN_ID: process.env.ARC_CHAIN_ID || '',
+  // Arc Testnet Configuration (from https://docs.arc.network/arc/references/connect-to-arc)
+  ARC_RPC_URL: process.env.ARC_RPC_URL || 'https://rpc.testnet.arc.network',
+  ARC_CHAIN_ID: process.env.ARC_CHAIN_ID || '5042002',
   ARC_USDC_CONTRACT_ADDRESS: process.env.ARC_USDC_CONTRACT_ADDRESS || '',
+  
+  // Public Arc config (for client-side access)
+  NEXT_PUBLIC_ARC_RPC_URL: process.env.NEXT_PUBLIC_ARC_RPC_URL || 'https://rpc.testnet.arc.network',
+  NEXT_PUBLIC_ARC_USDC_CONTRACT_ADDRESS: process.env.NEXT_PUBLIC_ARC_USDC_CONTRACT_ADDRESS || '',
 
   // thirdweb x402 configuration
   THIRDWEB_CLIENT_ID: process.env.THIRDWEB_CLIENT_ID || '',

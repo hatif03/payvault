@@ -5,6 +5,7 @@ export interface User extends FirestoreDocument {
   email: string;
   password: string;
   wallet: string;
+  circleWalletId?: string;
   name: string;
   rootFolder: string; // Document reference to Item
 }
@@ -13,6 +14,7 @@ export interface CreateUserData {
   email: string;
   password: string;
   wallet: string;
+  circleWalletId?: string;
   name: string;
   rootFolder: string;
 }
@@ -21,6 +23,7 @@ export interface UpdateUserData {
   email?: string;
   password?: string;
   wallet?: string;
+  circleWalletId?: string;
   name?: string;
   rootFolder?: string;
 }

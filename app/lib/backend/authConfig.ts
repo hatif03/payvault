@@ -56,8 +56,17 @@ export const authOptions: AuthOptions = {
               throw new Error('An account with this email already exists');
             }
 
-            // Generate a demo wallet address for new users
-            const wallet = credentials.wallet || `0x${Math.random().toString(16).substr(2, 40)}`;
+            // Create a managed wallet for new users if not provided
+            let wallet = credentials.wallet as string | undefined;
+            let circleWalletId: string | undefined;
+            if (!wallet) {
+              const { CircleClient } = await import('@/app/lib/circle/circleClient');
+              const { secrets } = await import('@/app/lib/config');
+              const circle = new CircleClient(secrets.CIRCLE_API_KEY || '');
+              const created = await circle.createWallet({ email: credentials.email, name: credentials.name });
+              wallet = created.address;
+              circleWalletId = created.walletId;
+            }
 
             // Create root folder for the user
             const rootFolder = await Item.createItem({
@@ -72,6 +81,7 @@ export const authOptions: AuthOptions = {
               password: credentials.password,
               name: credentials.name,
               wallet: wallet,
+              circleWalletId,
               rootFolder: rootFolder.id,
             });
 
