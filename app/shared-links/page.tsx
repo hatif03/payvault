@@ -142,9 +142,14 @@ export default function SharedLinksPage() {
             </div>
           ) : (
             <>
-              {links.map((link) => (
+              {links.map((link, index) => {
+                // Create a unique key combining _id, linkId, and index as fallback
+                const uniqueKey = link._id 
+                  ? `${link._id}-${link.linkId || index}` 
+                  : `link-${index}-${link.linkId || Date.now()}`;
+                return (
                 <MonetizedContentCard
-                  key={link._id}
+                  key={uniqueKey}
                   content={{
                     _id: link._id,
                     title: link.title,
@@ -162,7 +167,8 @@ export default function SharedLinksPage() {
                   showStats={true}
                   className={copySuccess === link.linkId ? 'border-green-500' : ''}
                 />
-              ))}
+                );
+              })}
               
               {/* Pagination */}
               <PaginationControls 
