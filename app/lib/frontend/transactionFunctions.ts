@@ -1,7 +1,7 @@
-import { purchaseFromMarketplace } from '@/actions/actions';
 import axios from 'axios';
 import { Transaction, TransactionFilters, TransactionsResponse } from '../types';
 import { handleApiError } from './marketplaceFunctions';
+import { purchaseListing as purchaseListingFromMarketplace } from './marketplaceFunctions';
 
 const API_ENDPOINTS = {
   transactions: '/api/transactions'
@@ -115,30 +115,6 @@ export async function purchaseListing(
   wallet: `0x${string}`, 
   affiliateCode?: string
 ): Promise<any> {
-  try {
-    const result = await purchaseFromMarketplace(wallet, listingId, affiliateCode);
-    
-    if (!result) {
-      throw new Error('No response received from purchase');
-    }
-
-    if (result.transactionData) {
-      return result;
-    }
-
-    return {
-      transactionData: {
-        transaction: result.transaction,
-        copiedItem: result.copiedItem,
-        paymentDetails: result.paymentDetails,
-        message: result.message
-      }
-    };
-  } catch (error: any) {
-    console.error('Purchase error:', error);
-    if (error.response?.data?.error) {
-      throw new Error(error.response.data.error);
-    }
-    throw error;
-  }
+  // Use the client-side purchaseListing from marketplaceFunctions which handles x402
+  return await purchaseListingFromMarketplace(listingId, wallet, affiliateCode);
 } 

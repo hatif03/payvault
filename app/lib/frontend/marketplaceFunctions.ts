@@ -160,25 +160,74 @@ export const getFileIcon = (mime?: string): IconType => {
   return FaFile;
 };
 
-export async function purchaseListing(listingId: string, wallet:`0x${string}`, affiliateCode?: string): Promise<any> {
+export async function purchaseListing(
+  listingId: string, 
+  wallet: `0x${string}`, 
+  affiliateCode?: string
+): Promise<any> {
   try {
-    const res = await purchaseFromMarketplace(wallet, listingId, affiliateCode);
-    if (!res || res.status !== 201) {
-      throw new Error('Purchase failed - Invalid response');
+    // Import x402 payment wrapper
+    const { getFetchWithPayment } = await import('@/app/lib/payments/x402Client');
+    
+    // Get fetch function with x402 payment interceptor
+    const fetchWithPayment = await getFetchWithPayment(wallet);
+    
+    const baseURL = process.env.NEXT_PUBLIC_HOST_NAME || window.location.origin;
+    const url = `${baseURL}/api/listings/${listingId}/purchase${affiliateCode ? '?affiliateProvided=true' : ''}`;
+    
+    // Get user session info for headers
+    const sessionResponse = await fetch('/api/auth/session');
+    const session = await sessionResponse.json();
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-user-id': session?.user?.id || '',
+      'x-user-email': session?.user?.email || '',
+    };
+    if (affiliateCode) headers['x-affiliate-code'] = affiliateCode;
+
+    // Use x402 payment wrapper - this will automatically handle 402 responses
+    const res = await fetchWithPayment(url, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      // Try to get error details from response
+      let errorData: any = {};
+      try {
+        errorData = await res.json();
+      } catch {
+        // If response is not JSON, use status text
+      }
+      
+      if (res.status === 402) {
+        // Payment required - x402 should handle this automatically
+        // If we get here, it means x402 wrapper didn't work or payment failed
+        const errorMessage = errorData.error || 'Payment required - Please ensure your wallet is connected and has sufficient USDC balance on Arc network';
+        if (errorData.details) {
+          console.error('Payment error details:', errorData.details);
+        }
+        throw new Error(errorMessage);
+      }
+      if (res.status === 401) {
+        throw new Error('Unauthorized - Please log in');
+      }
+      if (res.status === 400) {
+        throw new Error(errorData.error || 'Cannot complete purchase');
+      }
+      if (res.status === 404) {
+        throw new Error('Listing not found');
+      }
+      throw new Error(errorData.error || `Purchase failed: ${res.status} ${res.statusText}`);
     }
-    return res;
+
+    const data = await res.json();
+    return data;
   } catch (error: any) {
     console.error("Purchase error:", error);
-    if (error.response?.status === 401) {
-      throw new Error('Unauthorized - Please log in');
-    }
-    if (error.response?.status === 400) {
-      throw new Error(error.response.data.error || 'Cannot complete purchase');
-    }
-    if (error.response?.status === 404) {
-      throw new Error('Listing not found');
-    }
-    throw new Error(error.message || 'Failed to complete purchase');
+    throw error;
   }
 }
 

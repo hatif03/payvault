@@ -66,14 +66,14 @@ export default function MarketplaceSearch({
   ), []);
 
   return (
-    <div className="bg-amber-100 border-2 border-black brutal-shadow-left p-6 mb-8">
+    <div className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left p-6 mb-8 rounded-lg">
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Search Input */}
         <div className="flex-1 relative">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               {isLoading ? loadingSpinner : (
-                <svg className="h-5 w-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-5 w-5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               )}
@@ -88,7 +88,7 @@ export default function MarketplaceSearch({
                   setSearchTerm('');
                 }
               }}
-              className="block w-full pl-10 pr-3 py-2 bg-white border-2 border-black font-freeman focus:outline-none focus:border-primary brutal-shadow-center"
+              className="block w-full pl-10 pr-3 py-2 bg-slate-700 border-2 border-slate-600 font-freeman focus:outline-none focus:border-primary brutal-shadow-center text-white placeholder-slate-400"
             />
           </div>
         </div>
@@ -98,7 +98,7 @@ export default function MarketplaceSearch({
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowTagDropdown(!showTagDropdown)}
-              className="button-primary bg-primary px-4 py-2 flex items-center duration-100"
+              className="button-primary neopop-gradient-primary px-4 py-2 flex items-center duration-100 border-2 border-slate-600 text-white"
             >
               <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -107,18 +107,18 @@ export default function MarketplaceSearch({
             </button>
 
             {showTagDropdown && (
-              <div className="absolute right-0 mt-2 w-56 bg-white border-2 border-black brutal-shadow-left z-10">
+              <div className="absolute right-0 mt-2 w-56 bg-slate-800 border-2 border-slate-600 brutal-shadow-left z-10 rounded-lg">
                 <div className="py-1 max-h-60 overflow-y-auto">
                   {availableTags.map((tag) => (
                     <label
                       key={tag}
-                      className="flex items-center px-4 py-2 text-sm font-freeman hover:bg-amber-100 cursor-pointer"
+                      className="flex items-center px-4 py-2 text-sm font-freeman hover:bg-slate-700 cursor-pointer text-slate-300"
                     >
                       <input
                         type="checkbox"
                         checked={selectedTags.includes(tag)}
                         onChange={() => handleTagToggle(tag)}
-                        className="mr-3 h-4 w-4 border-2 border-black focus:ring-primary"
+                        className="mr-3 h-4 w-4 border-2 border-slate-600 focus:ring-primary bg-slate-700"
                       />
                       {tag}
                     </label>
@@ -133,7 +133,7 @@ export default function MarketplaceSearch({
         {hasActiveFilters && (
           <button
             onClick={clearSearch}
-            className="button-primary bg-white px-4 py-2 flex items-center"
+            className="button-primary bg-slate-700 text-slate-300 px-4 py-2 flex items-center border-2 border-slate-600"
           >
             <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -146,16 +146,16 @@ export default function MarketplaceSearch({
       {/* Active Filters Display */}
       {selectedTags.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
-          <span className="text-sm font-freeman">Filtered by tags:</span>
+          <span className="text-sm font-freeman text-slate-300">Filtered by tags:</span>
           {selectedTags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center px-3 py-1 bg-primary border-2 border-black font-freeman text-sm brutal-shadow-center"
+              className="inline-flex items-center px-3 py-1 neopop-gradient-primary border-2 border-slate-600 font-freeman text-sm brutal-shadow-center text-white"
             >
               {tag}
               <button
                 onClick={() => handleTagToggle(tag)}
-                className="ml-2 hover:text-amber-700"
+                className="ml-2 hover:text-slate-400"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

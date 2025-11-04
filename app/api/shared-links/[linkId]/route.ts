@@ -6,18 +6,18 @@ import {
 } from '@/app/lib/utils/controllerUtils';
 import { copyItemToUserDrive } from '@/app/lib/utils/itemUtils';
 import { SharedLink } from '@/app/models/SharedLink';
+import { Item } from '@/app/models/Item';
+import { User } from '@/app/models/User';
 import { NextRequest, NextResponse } from 'next/server';
 
 async function getAndValidateLink(linkId: string, session?: any) {
-  const sharedLink = await SharedLink.findOne({ linkId, isActive: true })
-    .populate('item', 'name type size mimeType url')
-    .populate('owner', 'name email wallet');
+  const sharedLink = await SharedLink.findByLinkId(linkId);
   
-  if (!sharedLink) {
+  if (!sharedLink || !sharedLink.isActive) {
     throw new Error('Link not found or expired');
   }
   
-  if (sharedLink.expiresAt && new Date() > sharedLink.expiresAt) {
+  if (sharedLink.expiresAt && new Date(sharedLink.expiresAt) < new Date()) {
     throw new Error('Link has expired');
   }
 
@@ -25,7 +25,28 @@ async function getAndValidateLink(linkId: string, session?: any) {
     throw new Error('Invalid link type');
   }
   
-  return sharedLink;
+  // Manually populate item and owner data
+  const item = await Item.findById(sharedLink.item);
+  const owner = await User.findById(sharedLink.owner);
+  
+  return {
+    ...sharedLink,
+    item: item ? {
+      _id: item.id,
+      name: item.name,
+      type: item.type,
+      size: item.size,
+      mimeType: item.mimeType,
+      url: item.url
+    } : null,
+    owner: sharedLink.owner, // Keep owner as ID string for createAccessResponse
+    ownerData: owner ? {
+      _id: owner.id,
+      name: owner.name,
+      email: owner.email,
+      wallet: owner.wallet
+    } : null
+  };
 }
 
 export async function GET(
@@ -36,7 +57,9 @@ export async function GET(
     const { linkId } = await params;
     const sharedLink = await getAndValidateLink(linkId);
     
-    await SharedLink.findByIdAndUpdate(sharedLink._id, { $inc: { accessCount: 1 } });
+    // Increment access count
+    const currentCount = sharedLink.accessCount || 0;
+    await SharedLink.update(sharedLink.id, { accessCount: currentCount + 1 } as any);
     
     let userId;
     try {
@@ -70,11 +93,24 @@ export async function POST(
         throw new Error('Payment required to access this content');
       }
       
-      const copiedItem = await copyItemToUserDrive(userId, sharedLink.item);
+      // Get item data for copying
+      const itemData = typeof sharedLink.item === 'string' 
+        ? await Item.findById(sharedLink.item)
+        : sharedLink.item;
+      
+      if (!itemData) {
+        throw new Error('Item not found');
+      }
+      
+      const copiedItem = await copyItemToUserDrive(userId, itemData);
+      
+      const itemName = typeof sharedLink.item === 'object' && sharedLink.item?.name 
+        ? sharedLink.item.name 
+        : itemData?.name || 'Item';
       
       return NextResponse.json({
         success: true,
-        message: `${sharedLink.item.name} has been added to your drive in the 'shared' folder`,
+        message: `${itemName} has been added to your drive in the 'shared' folder`,
         copiedItem
       });
     });

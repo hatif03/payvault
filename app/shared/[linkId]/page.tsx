@@ -13,15 +13,17 @@ import {
 } from '@/app/lib/frontend/sharedLinkFunctions';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 import { FaFolder } from 'react-icons/fa';
 
 export default function SharedLinkPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { data: session, status } = useSession();
   const linkId = params.linkId as string;
+  const affiliateCode = searchParams.get('ref') || undefined;
 
   const [linkData, setLinkData] = useState<SharedLinkAccessResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -79,7 +81,7 @@ export default function SharedLinkPage() {
       setIsProcessing(true);
       setError(null);
       
-      const result = await payForSharedLink(linkId, session.user.wallet as `0x${string}`);
+      const result = await payForSharedLink(linkId, session.user.wallet as `0x${string}`, affiliateCode);
       console.log("Shared link payment result:", result);
       
       // Create detailed success message with blockchain info

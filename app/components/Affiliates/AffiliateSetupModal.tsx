@@ -25,11 +25,13 @@ interface ReferralUrlModalProps {
 function ReferralUrlModal({ isOpen, onClose, affiliateCode, contentId, contentType, contentTitle }: ReferralUrlModalProps) {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
   const referralUrl = `${baseUrl}/${contentType === 'listing' ? 'marketplace' : 'shared'}/${contentId}?ref=${affiliateCode}`;
+  const [copySuccess, setCopySuccess] = useState(false);
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      // You could add a toast notification here
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
       console.error('Failed to copy: ', err);
     }
@@ -38,68 +40,64 @@ function ReferralUrlModal({ isOpen, onClose, affiliateCode, contentId, contentTy
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white border-2 border-black brutal-shadow-left max-w-lg w-full">
-        <div className="bg-green-100 border-b-2 border-black p-4">
+    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-amber-100 border-2 border-black brutal-shadow-left max-w-lg w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b-2 border-black">
           <div className="flex justify-between items-center">
-            <h2 className="font-anton text-xl">🎉 YOU&apos;RE NOW AN AFFILIATE!</h2>
+            <h2 className="font-anton text-3xl">🎉 YOU&apos;RE NOW AN AFFILIATE!</h2>
             <button
               onClick={onClose}
-              className="text-2xl hover:scale-110 transition-transform"
+              className="text-2xl hover:text-primary transition-transform"
             >
               ×
             </button>
           </div>
-          <p className="font-freeman text-sm mt-1">
+          <p className="font-freeman text-sm mt-2">
             For: {contentTitle}
           </p>
         </div>
 
-        <div className="p-6 space-y-4">
-          <div className="text-center mb-4">
+        <div className="p-6 space-y-6">
+          <div className="text-center">
             <p className="font-freeman text-lg">
               Start earning commissions by sharing your referral link!
             </p>
           </div>
 
           <div>
-            <label className="block font-freeman text-sm mb-2 font-bold">
-              Your Affiliate Code
-            </label>
+            <label className="font-freeman block mb-2">Your Affiliate Code</label>
             <div className="flex gap-2">
-              <code className="flex-1 px-3 py-2 bg-gray-100 border-2 border-black font-mono text-sm">
+              <code className="flex-1 px-3 py-2 bg-white border-2 border-black font-mono text-sm font-freeman">
                 {affiliateCode}
               </code>
               <button
                 onClick={() => copyToClipboard(affiliateCode)}
-                className="px-3 py-2 border-2 border-black bg-primary font-freeman hover:translate-x-1 hover:translate-y-1 hover:brutal-shadow-center transition-all"
+                className="button-primary bg-primary px-4 py-2"
               >
-                📋 Copy
+                {copySuccess ? 'Copied!' : 'Copy'}
               </button>
             </div>
           </div>
 
           <div>
-            <label className="block font-freeman text-sm mb-2 font-bold">
-              Your Referral URL
-            </label>
+            <label className="font-freeman block mb-2">Your Referral URL</label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={referralUrl}
                 readOnly
-                className="flex-1 px-3 py-2 bg-gray-100 border-2 border-black font-freeman text-xs"
+                className="flex-1 px-3 py-2 bg-white border-2 border-black font-freeman text-xs"
               />
               <button
                 onClick={() => copyToClipboard(referralUrl)}
-                className="px-3 py-2 border-2 border-black bg-primary font-freeman hover:translate-x-1 hover:translate-y-1 hover:brutal-shadow-center transition-all"
+                className="button-primary bg-primary px-4 py-2"
               >
-                📋 Copy
+                {copySuccess ? 'Copied!' : 'Copy'}
               </button>
             </div>
           </div>
 
-          <div className="bg-yellow-50 border-2 border-yellow-300 p-3 mt-4">
+          <div className="bg-primary border-2 border-black p-4 brutal-shadow-center">
             <h4 className="font-freeman text-sm font-bold mb-2">💡 How it works:</h4>
             <ul className="font-freeman text-xs space-y-1">
               <li>• Share your referral URL with others</li>
@@ -108,10 +106,10 @@ function ReferralUrlModal({ isOpen, onClose, affiliateCode, contentId, contentTy
             </ul>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex justify-end pt-4">
             <button
               onClick={onClose}
-              className="flex-1 button-primary bg-[#FFD000] px-4 py-2"
+              className="button-primary bg-primary px-4 py-2"
             >
               Got it!
             </button>
@@ -162,14 +160,28 @@ export default function AffiliateSetupModal({
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
+          let errorData: any = {};
+          try {
+            const text = await response.text();
+            errorData = text ? JSON.parse(text) : {};
+          } catch {
+            errorData = { error: `Failed with status ${response.status}` };
+          }
           throw new Error(errorData.error || 'Failed to become affiliate');
         }
 
-        const { affiliate } = await response.json();
+        const responseText = await response.text();
+        if (!responseText) {
+          throw new Error('Empty response from server');
+        }
+        
+        const responseData = JSON.parse(responseText);
+        const { affiliate } = responseData;
         setCreatedAffiliate(affiliate);
         onSuccess?.(affiliate);
         onClose();
+        
+        // Show referral modal first, then redirect after user closes it
         setShowReferralModal(true);
       } else {
         // Owner is setting up an affiliate for their content
@@ -200,11 +212,23 @@ export default function AffiliateSetupModal({
         });
 
         if (!response.ok) {
-          const errorData = await response.json();
+          let errorData: any = {};
+          try {
+            const text = await response.text();
+            errorData = text ? JSON.parse(text) : {};
+          } catch {
+            errorData = { error: `Failed with status ${response.status}` };
+          }
           throw new Error(errorData.error || 'Failed to create affiliate');
         }
 
-        const { affiliate } = await response.json();
+        const responseText = await response.text();
+        if (!responseText) {
+          throw new Error('Empty response from server');
+        }
+        
+        const responseData = JSON.parse(responseText);
+        const { affiliate } = responseData;
         onSuccess?.(affiliate);
         onClose();
         
@@ -213,7 +237,8 @@ export default function AffiliateSetupModal({
         setCommissionRate(10);
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Failed to create affiliate. Please try again.');
+      // Don't close modal on error so user can see the error message
     } finally {
       setLoading(false);
     }
@@ -222,40 +247,44 @@ export default function AffiliateSetupModal({
   const handleReferralModalClose = () => {
     setShowReferralModal(false);
     setCreatedAffiliate(null);
+    // Redirect to /affiliates page after closing the success modal
+    if (mode === 'become' && typeof window !== 'undefined') {
+      window.location.href = '/affiliates';
+    }
   };
 
   if (!isOpen) return null;
 
   return (
     <>
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white border-2 border-black brutal-shadow-left max-w-md w-full">
-          <div className="bg-[#FFD000] border-b-2 border-black p-4">
+      <div className="fixed inset-0 bg-black/90 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-amber-100 border-2 border-black brutal-shadow-left max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b-2 border-black">
             <div className="flex justify-between items-center">
-              <h2 className="font-anton text-xl">
+              <h2 className="font-anton text-3xl">
                 {mode === 'become' ? 'BECOME AN AFFILIATE' : 'SET UP AFFILIATE'}
               </h2>
               <button
                 onClick={onClose}
-                className="text-2xl hover:scale-110 transition-transform"
+                className="text-2xl hover:text-primary transition-transform"
               >
                 ×
               </button>
             </div>
-            <p className="font-freeman text-sm mt-1">
+            <p className="font-freeman text-sm mt-2">
               For: {contentTitle}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {mode === 'become' ? (
               <>
-                <div className="text-center mb-4">
-                  <p className="font-freeman">
+                <div className="text-center">
+                  <p className="font-freeman text-lg">
                     Start earning commissions by becoming an affiliate for this content!
                   </p>
                 </div>
-                <div className="bg-green-50 border-2 border-green-300 p-3">
+                <div className="bg-primary border-2 border-black p-4 brutal-shadow-center">
                   <p className="font-freeman text-sm">
                     You&apos;ll earn commission when people purchase through your referral link.
                   </p>
@@ -264,23 +293,19 @@ export default function AffiliateSetupModal({
             ) : (
               <>
                 <div>
-                  <label className="block font-freeman text-sm mb-2">
-                    Affiliate User Email
-                  </label>
+                  <label className="font-freeman block mb-2">Affiliate User Email</label>
                   <input
                     type="email"
                     value={affiliateEmail}
                     onChange={(e) => setAffiliateEmail(e.target.value)}
-                    className="w-full px-3 py-2 border-2 border-black font-freeman focus:outline-none focus:border-[#FFD000]"
+                    className="w-full px-3 py-2 bg-white border-2 border-black font-freeman focus:outline-none focus:border-primary brutal-shadow-center"
                     placeholder="Enter affiliate's email address"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block font-freeman text-sm mb-2">
-                    Commission Rate (%)
-                  </label>
+                  <label className="font-freeman block mb-2">Commission Rate (%)</label>
                   <input
                     type="number"
                     min="0"
@@ -288,12 +313,12 @@ export default function AffiliateSetupModal({
                     step="0.1"
                     value={commissionRate}
                     onChange={(e) => setCommissionRate(parseFloat(e.target.value))}
-                    className="w-full px-3 py-2 border-2 border-black font-freeman focus:outline-none focus:border-[#FFD000]"
+                    className="w-full px-3 py-2 bg-white border-2 border-black font-freeman focus:outline-none focus:border-primary brutal-shadow-center"
                     required
                   />
-                  <div className="mt-2 text-xs font-freeman text-gray-600">
+                  <p className="font-freeman text-xs mt-2">
                     The affiliate will earn {commissionRate}% commission on each sale
-                  </div>
+                  </p>
                 </div>
               </>
             )}
@@ -304,19 +329,19 @@ export default function AffiliateSetupModal({
               </div>
             )}
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex justify-end gap-2 pt-6">
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 px-4 py-2 border-2 border-black bg-gray-100 font-freeman hover:translate-x-1 hover:translate-y-1 transition-transform"
+                className="button-primary bg-white px-4 py-2 duration-100"
                 disabled={loading}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={loading}
-                className="flex-1 button-primary bg-[#FFD000] px-4 py-2 disabled:opacity-50"
+                disabled={loading || (mode === 'setup' && !affiliateEmail)}
+                className="button-primary bg-primary px-4 py-2 duration-100 disabled:opacity-50"
               >
                 {loading 
                   ? (mode === 'become' ? 'Joining...' : 'Creating...') 

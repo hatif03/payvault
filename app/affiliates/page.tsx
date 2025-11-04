@@ -85,7 +85,11 @@ export default function AffiliatesPage() {
           const earnedData = await earnedResponse.json();
           const paidData = await paidResponse.json();
           
-          setTransactions([...earnedData.transactions, ...paidData.transactions]);
+          const allTransactions = [
+            ...(Array.isArray(earnedData.transactions) ? earnedData.transactions : []),
+            ...(Array.isArray(paidData.transactions) ? paidData.transactions : [])
+          ];
+          setTransactions(allTransactions);
           setStats(prev => ({
             ...prev,
             totalEarned: earnedData.summary.paid.amount,
@@ -97,10 +101,11 @@ export default function AffiliatesPage() {
         const response = await fetch(`/api/affiliates?type=${activeTab}`);
         if (response.ok) {
           const data = await response.json();
-          setAffiliates(data.affiliates);
+          const affiliatesList = Array.isArray(data.affiliates) ? data.affiliates : [];
+          setAffiliates(affiliatesList);
           
           // Calculate stats
-          const activeCount = data.affiliates.filter((a: Affiliate) => a.status === 'active').length;
+          const activeCount = affiliatesList.filter((a: Affiliate) => a.status === 'active').length;
           setStats(prev => ({
             ...prev,
             activeAffiliates: activeCount
@@ -261,8 +266,13 @@ export default function AffiliatesPage() {
                     <p className="font-freeman text-lg text-slate-300">No transactions found</p>
                   </div>
                 ) : (
-                  transactions.map((transaction) => (
-                    <div key={transaction._id} className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left p-4 rounded-lg">
+                  transactions.map((transaction, index) => {
+                    // Create a unique key combining _id, createdAt, and index as fallback
+                    const uniqueKey = transaction._id 
+                      ? `${transaction._id}-${transaction.createdAt || index}` 
+                      : `transaction-${index}-${transaction.createdAt || Date.now()}`;
+                    return (
+                    <div key={uniqueKey} className="bg-slate-800 border-2 border-slate-600 brutal-shadow-left p-4 rounded-lg">
                       <div className="flex justify-between items-start">
                         <div>
                           <p className="font-freeman text-sm text-slate-400">
@@ -287,7 +297,8 @@ export default function AffiliatesPage() {
                         </span>
                       </div>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             ) : (
@@ -302,15 +313,21 @@ export default function AffiliatesPage() {
                     </p>
                   </div>
                 ) : (
-                  affiliates.map((affiliate) => (
+                  affiliates.map((affiliate, index) => {
+                    // Create a unique key combining _id, affiliateCode, and index as fallback
+                    const uniqueKey = affiliate._id 
+                      ? `${affiliate._id}-${affiliate.affiliateCode || index}` 
+                      : `affiliate-${index}-${affiliate.affiliateCode || Date.now()}`;
+                    return (
                     <AffiliateCard
-                      key={affiliate._id}
+                      key={uniqueKey}
                       affiliate={affiliate}
                       currentUserId={session.user.id}
                       onUpdate={handleUpdateAffiliate}
                       onDelete={handleDeleteAffiliate}
                     />
-                  ))
+                    );
+                  })
                 )}
               </div>
             )}

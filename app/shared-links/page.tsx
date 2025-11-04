@@ -36,7 +36,8 @@ export default function SharedLinksPage() {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`/api/shared-links?filter=${filter}`);
+      // API supports both 'filter' and 'type' params
+      const response = await fetch(`/api/shared-links?filter=${filter === 'all' ? '' : filter}`);
       if (!response.ok) {
         throw new Error('Failed to load shared links');
       }

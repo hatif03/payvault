@@ -1,4 +1,4 @@
-import { purchaseMonetizedLink } from "@/actions/actions";
+// Removed purchaseMonetizedLink import - using direct API call instead
 
 export interface SharedLink {
   _id: string;
@@ -113,14 +113,63 @@ export async function addSharedItemToDrive(linkId: string): Promise<{
 export async function payForSharedLink(
   linkId: string,
   wallet: `0x${string}`,
+  affiliateCode?: string
 ): Promise<any> {
   try {
-    return await purchaseMonetizedLink(wallet, linkId);
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      throw new Error("Unauthorized - Please log in");
+    // Get user session info for headers
+    const sessionResponse = await fetch('/api/auth/session');
+    const session = await sessionResponse.json();
+    
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'x-user-id': session?.user?.id || '',
+      'x-user-email': session?.user?.email || '',
+    };
+    
+    // Add affiliate code if provided
+    if (affiliateCode) {
+      headers['x-affiliate-code'] = affiliateCode;
     }
-    throw error.message ? new Error(error.message) : error;
+
+    const baseURL = process.env.NEXT_PUBLIC_HOST_NAME || window.location.origin;
+    const url = `${baseURL}/api/shared-links/${linkId}/purchase`;
+    
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      // Try to get error details from response
+      let errorData: any = {};
+      try {
+        errorData = await res.json();
+      } catch {
+        // If response is not JSON, use status text
+      }
+      
+      if (res.status === 402) {
+        const errorMessage = errorData.error || 'Payment required - Please ensure your wallet is connected and has sufficient USDC balance on Arc network';
+        throw new Error(errorMessage);
+      }
+      if (res.status === 401) {
+        throw new Error('Unauthorized - Please log in');
+      }
+      if (res.status === 400) {
+        throw new Error(errorData.error || 'Cannot complete purchase');
+      }
+      if (res.status === 404) {
+        throw new Error('Shared link not found');
+      }
+      throw new Error(errorData.error || `Purchase failed: ${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (error: any) {
+    console.error("Shared link purchase error:", error);
+    throw error;
   }
 }
 
